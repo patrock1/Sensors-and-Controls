@@ -1,0 +1,52 @@
+# ALL tunable numbers, Every value that came from a design decision sawyws where it originates from.
+
+#default.yaml
+
+sim:
+  dt_sim: 0.002
+  dt_ctrl: 0.01      # control and abserver period
+  dt_cam: 0.05        # 20 Hz camera
+  image_width: 320
+  image_height: 240
+
+camera:
+  fovy_deg: 60        # must match models ur3/ur3.xml
+
+noise:
+  sigma_q: 0.0005     # rad, encoder noise (assumption: roughly a 13-bit encoder)
+  depth_a: 0.0015     # sigma_d = a + b Z^2, the Week 4 RGB-D noise model
+  depth_b: 0.0022
+  pixel_sigma: 0.5    # px, centroid noise (asumption)
+  dropout_prob: 0.01
+
+detection:
+  hue_max: 10         # OpenCV hue is 0.179; red wraps around 0
+  hue_min_wrap: 170
+  s_min: 100
+  v_min: 60
+  min_area_px: 30
+
+localisation:
+  min_depth_px: 20
+
+modelling:
+  joint_inertia: [0.3503, 0.4300, 0.1060, 0.0164, 0.0116, 0.0103]   # diag(M) at the home pose, from sim/inertia.py
+  damping: 1.0     # matches the MJCF joint damping
+  home_q: [0.466, -3.029, 1.141, 0.318, -1.571, 0.0]
+
+observer:
+  sigma_tau: [2.0, 2.0, 1.0, 0.3, 0.3, 0.3]   # N m, unmodelled torque (gravity error, coupling); tune by NEES
+
+object_filter:
+  q_obj: 1.0e-6   # m^2/s. radnom-walk, intensity for a static cube
+
+lqr:
+  q_err_max: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05]    # rad, Bryson limits
+  qd_max: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]             # rad/s
+  integral: true
+  qi_max: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05]       # rad s
+
+servo:
+  lam: 1.0                    # visual servo gain
+  qd_limit: 1.0               # rad/s cap on commanded joint rate
+  pre_grasp_height: 0.10      # m above the cube centre along tool z

@@ -5,7 +5,7 @@ Part B pixel + depth -> #D point -> base frame
 
 import numpy as np
 from ur3pick.interfaces import Detection, ObjectMeasurement
-from ur3pick.sension import frames
+from ur3pick.sensing import frames
 
 def depth_sigma(Z, a, b):
     return a * b * np.asarray(Z) ** 2

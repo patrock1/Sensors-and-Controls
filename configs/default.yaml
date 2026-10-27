@@ -3,6 +3,7 @@
 #default.yaml
 
 sim:
+  gravcomp: 1.0     # 1 = perfect gravity compensation (model assumption 1); <1 is a Part E mismatch test
   dt_sim: 0.002
   dt_ctrl: 0.01      # control and abserver period
   dt_cam: 0.05        # 20 Hz camera
@@ -35,7 +36,7 @@ modelling:
   home_q: [0.466, -3.029, 1.141, 0.318, -1.571, 0.0]
 
 observer:
-  sigma_tau: [2.0, 2.0, 1.0, 0.3, 0.3, 0.3]   # N m, unmodelled torque (gravity error, coupling); tune by NEES
+  sigma_tau: [6.0, 6.0, 3.0, 0.9, 0.9, 0.9]   # N m, unmodelled torque (coupling, inertia change with pose). Tuned on dev seeds: 3x the first guess took NEES from 98 to 18 (expect 12)
 
 object_filter:
   q_obj: 1.0e-6   # m^2/s. radnom-walk, intensity for a static cube
@@ -50,3 +51,26 @@ servo:
   lam: 1.0                    # visual servo gain
   qd_limit: 1.0               # rad/s cap on commanded joint rate
   pre_grasp_height: 0.10      # m above the cube centre along tool z
+
+
+object:
+  size: 0.04                  # m, cube edge (must match models/scene.xml)
+  region:                     # m, base frame. Chosen so the cube is visible from the home pose
+    x_min: 0.22
+    x_max: 0.34
+    y_min: -0.08
+    y_max: 0.08
+
+grasp:
+  search_timeout: 2.0         # s without a first detection -> fail
+  approach_tol: 0.012         # m, tool-frame error to the pre-grasp point
+  descend_height: 0.03        # m, tool origin above cube centre when the gripper closes
+  descend_tol: 0.008          # m
+  settle_time: 0.3            # s of zero reference before the weld closes
+  lift_height: 0.15           # m above the grasp point
+  lift_tol: 0.01              # m
+  phase_timeout: 8.0          # s per motion phase
+  success_lateral_tol: 0.01   # m, cube centre within this of the tool axis when the gripper closes
+  success_height: 0.10        # m, cube centre above the table at the end counts as picked
+
+disturbance: {}               # see sim/disturbances.py; overridden by configs/sweeps/disturbance.yaml

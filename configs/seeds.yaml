@@ -1,0 +1,5 @@
+# Trial seeds. A seed fixes the cube pose, sensor noise and disturbance noise, so any trial can be replayed.
+# dev  : used while tuning (gains, noise parameters). Never quote results from these.
+# eval : used once for the numbers in the report, after tuning is frozen.
+dev:  {start: 0,   count: 10}
+eval: {start: 100, count: 50}

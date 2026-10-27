@@ -1,0 +1,10 @@
+# Part E: disturbances and model mismatch.
+name: disturbance
+n_seeds: 20
+levels:
+  - {name: "none", overrides: {}}
+  - {name: "push 5 N, 1 s", overrides: {disturbance: {force: [0.0, 5.0, 0.0], t_start: 1.0, t_end: 2.0}}}
+  - {name: "push 10 N, 1 s", overrides: {disturbance: {force: [0.0, 10.0, 0.0], t_start: 1.0, t_end: 2.0}}}
+  - {name: "camera blackout 0.5 s", overrides: {disturbance: {blackout: [[0.5, 1.0]]}}}
+  - {name: "encoder bias 0.01 rad", overrides: {disturbance: {encoder_bias: 0.01}}}
+  - {name: "gravity comp 90 %", overrides: {sim.gravcomp: 0.9}}

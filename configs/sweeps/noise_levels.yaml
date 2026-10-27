@@ -1,0 +1,9 @@
+# Part E: sensor noise sweep. Each level multiplies every noise source together.
+# overrides use dotted keys into default.yaml.
+name: noise_levels
+n_seeds: 20
+levels:
+  - {name: "1x (nominal)", overrides: {}}
+  - {name: "2x", overrides: {noise.sigma_q: 0.001, noise.depth_a: 0.003, noise.depth_b: 0.0044, noise.pixel_sigma: 1.0}}
+  - {name: "4x", overrides: {noise.sigma_q: 0.002, noise.depth_a: 0.006, noise.depth_b: 0.0088, noise.pixel_sigma: 2.0}}
+  - {name: "8x", overrides: {noise.sigma_q: 0.004, noise.depth_a: 0.012, noise.depth_b: 0.0176, noise.pixel_sigma: 4.0}}

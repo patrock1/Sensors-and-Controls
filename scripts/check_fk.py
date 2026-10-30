@@ -2,6 +2,9 @@
  
 Run from the repo root:  python -m scripts.check_fk
 """
+import pathlib
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))   # make `ur3pick` importable when run as scripts/xxx.py
 import numpy as np
 import mujoco
 from ur3pick.modelling import ur3_params as P

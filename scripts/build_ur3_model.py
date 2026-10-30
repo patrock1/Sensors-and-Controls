@@ -1,34 +1,37 @@
 """
 build)ur3_model.py
-
+ 
 generate models from the DH parameters in the ur3_params.py
 run from the repo root : python -m scripts.build_ur3_model
-
+ 
 construction with standard dh paramters
 """
-
+ 
+import pathlib
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))   # make `ur3pick` importable when run as scripts/xxx.py
 import os
 import numpy as np
 import mujoco
 from ur3pick.modelling import ur3_params as P
-
+ 
 OUT = os.path.join("models", "ur3", "ur3.xml")
 LINK_NAMES = ["shoulder", "upper_arm", "forearm", "wrist1", "wrist2", "wrist3"]
-
+ 
 def quat_of(R):
     q = np.zeros(4)
     mujoco.mju_mat2Quat(q, R.flatten())
     return q
-
+ 
 def f(v):
     return " ".join(f"{x:.6f}" for x in v)
-
+ 
 def rod_inertia(m, length, radius=0.04):
     """Diagonal inertia of a uniform rod along z (approximation)."""
     ixx = m * (3 * radius**2 + length**2) / 12.0
     izz = m * radius**2 / 2.0
     return np.array([ixx, ixx, izz])
-
+ 
 def main():
     lines = []
     w = lines.append
@@ -37,11 +40,13 @@ def main():
     w('  <compiler angle="radian"/>')
     w('  <default>')
     w('    <joint damping="1.0" armature="0.01" limited="true"/>')
-    w('    <geom rgba="0.55 0.6 0.7 1" contype="1" conaffinity="1"/>')
+    # Collision filtering (bit masks): arm geoms are contype 1 / conaffinity 0, so they hit only
+    # geoms that list bit 1 in their conaffinity (the cube). No arm-arm, arm-table or arm-floor contacts.
+    w('    <geom rgba="0.55 0.6 0.7 1" contype="1" conaffinity="0"/>')
     w('  </default>')
     w('  <worldbody>')
-    w('    <geom name="base_mount" type="cylinder" fromto="0 0 0 0 0 0.05" size="0.06" rgba="0.3 0.3 0.3 1"/>')
-
+    w('    <geom name="base_mount" type="cylinder" fromto="0 0 0 0 0 0.05" size="0.06" contype="0" conaffinity="0" rgba="0.3 0.3 0.3 1"/>')
+ 
     depth = 2
     for k in range(6):
         T = P.fixed_transform(k - 1) if k > 0 else np.eye(4)
@@ -49,10 +54,12 @@ def main():
         child = P.fixed_transform(k)[:3, 3]  # origin of F_k in G_k coords
         length = float(np.linalg.norm(child))
         ind = "  " * (depth + k)
-        w(f'{ind}<body name="{LINK_NAMES[k]}" pos="{f(pos)}" quat="{f(quat)}">')
+        # gravcomp="1" must be in the XML: MuJoCo sizes its gravity-compensation buffers at compile time,
+        # so a runtime change to body_gravcomp is silently ignored if the compiled model has none.
+        w(f'{ind}<body name="{LINK_NAMES[k]}" pos="{f(pos)}" quat="{f(quat)}" gravcomp="1">')
         w(f'{ind}  <joint name="joint{k+1}" type="hinge" axis="0 0 1" range="{P.Q_LIMIT[0]:.4f} {P.Q_LIMIT[1]:.4f}"/>')
         w(f'{ind}  <inertial pos="{f(child / 2)}" mass="{P.MASS[k]}" diaginertia="{f(rod_inertia(P.MASS[k], length))}"/>')
-        w(f'{ind}  <geom name="{LINK_NAMES[k]}_geom" type="capsule" fromto="0 0 0 {f(child)}" size="0.04"/>')
+        w(f'{ind}  <geom name="{LINK_NAMES[k]}_geom" type="capsule" fromto="0 0 0 {f(child)}" size="0.04"{' contype="0"' if k == 5 else ''}/>')   # wrist3 stands in for the gripper: no cube contact
         last = k == 5
         if last:
             T6 = P.fixed_transform(5)
@@ -78,6 +85,6 @@ def main():
     with open(OUT, "w") as fh:
         fh.write("\n".join(lines) + "\n")
     print("wrote", OUT)
-
+ 
 if __name__ == "__main__":
     main()

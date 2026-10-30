@@ -2,6 +2,9 @@
  
 Run from the repo root:  python -m scripts.design_report
 """
+import pathlib
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))   # make `ur3pick` importable when run as scripts/xxx.py
 import numpy as np
 import yaml
 import mujoco

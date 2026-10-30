@@ -302,7 +302,8 @@ Each owner edits only their own group. Q and R matrices are written as diagonal 
 | `sensing/`, `sim/sensors.py` | B | _tbc_ | _tbc_ |
 | `estimation/` | C | _tbc_ | _tbc_ |
 | `control/` | D | _tbc_ | _tbc_ |
-| `pipeline.py`, `scripts/`, `evaluation/`, README | E | _tbc_ | _tbc_ |
+| `pipeline.py`, | E | TBC | TBC |
+`scripts/`, `evaluation/`, README | F | Pat | Isaac |
 
 Everyone must be able to explain the whole pipeline in the viva. Review across areas is how that happens.
 

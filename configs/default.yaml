@@ -72,5 +72,6 @@ grasp:
   phase_timeout: 8.0          # s per motion phase
   success_lateral_tol: 0.01   # m, cube centre within this of the tool axis when the gripper closes
   success_height: 0.10        # m, cube centre above the table at the end counts as picked
+  success_hold_tol: 0.03      # m, cube centre within this of the tool origin (xy) at the end (interfaces.md 6 proposal)
 
 disturbance: {}               # see sim/disturbances.py; overridden by configs/sweeps/disturbance.yaml

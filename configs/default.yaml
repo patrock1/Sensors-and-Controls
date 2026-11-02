@@ -7,6 +7,7 @@ sim:
   dt_sim: 0.002
   dt_ctrl: 0.01      # control and abserver period
   dt_cam: 0.05        # 20 Hz camera
+  grasp_capture_depth: 0.05   # m, cube centre at most this far ahead of tool0 for the weld to catch it (descend_height 0.03 + margin)
   image_width: 320
   image_height: 240
 

@@ -302,8 +302,8 @@ Each owner edits only their own group. Q and R matrices are written as diagonal 
 | `sensing/`, `sim/sensors.py` | B | _tbc_ | _tbc_ |
 | `estimation/` | C | _tbc_ | _tbc_ |
 | `control/` | D | _tbc_ | _tbc_ |
-  | `pipeline.py` | E | TBC | TBC |
-  | `scripts/`, `evaluation/`, README | E | Pat | Isaac |
+| `pipeline.py`, `scripts/`, `evaluation/`, README | E | _tbc_ | _tbc_ |
+
 Everyone must be able to explain the whole pipeline in the viva. Review across areas is how that happens.
 
 ---
@@ -328,3 +328,20 @@ Everyone must be able to explain the whole pipeline in the viva. Review across a
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | _fill in_ | Initial draft |
+
+
+---
+
+## Changes agreed during implementation (v0.2)
+
+| Area | Decision |
+|---|---|
+| Success | The gripper closed (weld active), the cube centre is at least `grasp.success_height` (0.10 m) above the table at the end, it is within 8 cm of the tool, and the state machine reached `done`. See `evaluation/metrics.py`. |
+| Object position | The depth camera sees the **top face** of the cube. `GraspStateMachine` subtracts `object.size / 2` in z to get the centre. This is a stated assumption (known cube size, upright, camera looking down). |
+| Object estimate | Updated only while the state machine is **not** in `descend`, `close`, `lift` or `done`. The cube leaves the field of view when the tool is close, so the estimate is frozen at the end of `approach`. |
+| `Command.gripper` | 0 = open, 1 = closed. 1 activates the weld in `sim/scene.py`. |
+| Cube region | `object.region` in `default.yaml`: x 0.22 to 0.34 m, y -0.08 to 0.08 m (replaces the polar region proposed in section 3.1). Chosen from a visibility map of the wrist camera at the home pose. |
+| Randomness | `Scene.reset(seed)` spawns three independent generators from `np.random.SeedSequence(seed)`: `scene`, `sensors`, `disturbance`. |
+| Calibration errors | `calibration.hand_eye_error` (m, tool frame) and `calibration.fovy_error_deg` change what the **estimator believes**; the simulated camera never moves. Implemented by `sensing/frames.set_hand_eye_error` and the K built in `pipeline.py`. |
+| Disturbances | `disturbance:` group: `force`, `t_start`, `t_end`, `blackout` windows, `encoder_bias`. All off by default. `sim.gravcomp < 1` is a model-mismatch test. |
+| Ground truth | Read in exactly one place, `pipeline._log_truth`, and stored in the log for evaluation. Enforced by `tests/test_no_ground_truth.py` (the control, estimation, sensing and modelling packages cannot import `mujoco`, `ur3pick.sim` or `ur3pick.evaluation`). |

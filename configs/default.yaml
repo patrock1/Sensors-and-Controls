@@ -30,6 +30,7 @@ detection:
 
 localisation:
   min_depth_px: 20
+  surface_to_centre: 0.02   # m, half of object.size: depth sees the top face, cube centre is this far below (measured +20.0 mm bias over 20 seeds)
 
 modelling:
   joint_inertia: [0.3503, 0.4300, 0.1060, 0.0164, 0.0116, 0.0103]   # diag(M) at the home pose, from sim/inertia.py

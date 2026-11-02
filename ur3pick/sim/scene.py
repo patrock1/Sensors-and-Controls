@@ -10,6 +10,7 @@ import mujoco
 
 from ur3pick.interfaces import Command
 from ur3pick.sim.randomise import sample_object_pose
+from ur3pick.sim.disturbances import Disturbances
 
 SCENE_XML = pathlib.Path(__file__).resolve().parents[2] / "models" / "scene.xml"
 ARM_BODIES = ["shoulder", "upper_arm", "forearm", "wrist1", "wrist2", "wrist3"]
@@ -45,7 +46,8 @@ class Scene:
         j = _id(m, mujoco.mjtObj.mjOBJ_JOINT, "target_free")
         self._obj_qadr = m.jnt_qposadr[j]
 
-        self.rng = None            # spare stream, e.g. disturbances
+        self.disturb = Disturbances(m, cfg)               # Part E push, blackout, encoder bias
+        self.rng = None            # spare stream
         self.sensor_rng = None     # pass to SensorSuite
         self.object_pose = None    # (p_B_O, yaw) set at reset, for logging only
         self.attached = False      # True while weld holds cube
@@ -68,6 +70,7 @@ class Scene:
         d.qpos[a:a + 3] = p
         d.qpos[a + 3:a + 7] = [np.cos(yaw / 2), 0.0, 0.0, np.sin(yaw / 2)]   # yaw about z
         d.qvel[:] = 0.0
+        d.xfrc_applied[:] = 0.0
         d.eq_active[self._weld] = 0
         self.attached, self._grip_closed = False, False
         self.object_pose = (p.copy(), yaw)
@@ -78,6 +81,7 @@ class Scene:
         self.data.ctrl[:6] = cmd.u                        # ctrlrange in ur3.xml clips to torque limits
         self._set_gripper(cmd.gripper >= 0.5)
         for _ in range(self.n_sub):
+            self.disturb.apply(self.data)                 # push switches on/off at exact sim time
             mujoco.mj_step(self.model, self.data)
 
     @property

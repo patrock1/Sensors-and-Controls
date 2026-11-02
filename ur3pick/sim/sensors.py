@@ -1,8 +1,8 @@
 """
 sensors.py
 Sim side: the ONLY pipeline-facing path to simulator state (interfaces.md 3.1).
-Encoders: q only plus gaussian noise, no qdot (reason observer exists).
-Wrist camera: rgb + depth every dt_cam, range dependent depth noise, random frame dropouts.
+Encoders: q only plus gaussian noise (+ Part E bias), no qdot (reason observer exists).
+Wrist camera: rgb + depth every dt_cam, range dependent depth noise, random dropouts, Part E blackout windows.
 """
 import numpy as np
 import mujoco
@@ -30,11 +30,13 @@ class SensorSuite:
 
     def read(self) -> SensorPacket:
         t = self.scene.t
-        q_meas = self.scene.data.qpos[:6] + self.rng.normal(0.0, self.sigma_q, 6)
+        dist = self.scene.disturb
+        q_meas = self.scene.data.qpos[:6] + self.rng.normal(0.0, self.sigma_q, 6) + dist.encoder_bias
         rgb = depth = stamp = None
         if t >= self.next_cam_t - 1e-6:                  # camera tick (every 5th control tick at 20 Hz)
             self.next_cam_t += self.dt_cam
-            if self.rng.random() >= self.dropout:          # dropped frame -> no image this tick
+            dropped = self.rng.random() < self.dropout     # drawn every tick so blackout does not shift the noise stream
+            if not dropped and not dist.camera_blocked(t):
                 rgb, depth = self._render()
                 stamp = t
         return SensorPacket(t=t, q_meas=q_meas, rgb=rgb, depth=depth, cam_stamp=stamp)

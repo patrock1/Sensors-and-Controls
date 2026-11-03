@@ -90,16 +90,25 @@ Signatures are the contract. Bodies are up to the owner.
 ```python
 # scene.py
 class Scene:
-    def __init__(self, cfg: dict): ...
+    def __init__(self, cfg: dict, xml_path=SCENE_XML): ...
     def reset(self, seed: int) -> None            # reloads state, randomises object, seeds all RNGs
     def step(self, cmd: Command) -> None          # advances dt_ctrl (several sim steps)
     @property
     def t(self) -> float
+    sensor_rng: np.random.Generator
+    object_pose: tuple
+    attached: bool
 
 # randomise.py
 def sample_object_pose(rng: np.random.Generator, cfg: dict) -> tuple[np.ndarray, float]
     # returns (p_B_O (3,), yaw rad). PROPOSED region: radius 0.20 to 0.35 m from the base axis,
     # |angle| <= 60 deg about +x, z = 0.02 (cube resting on table). Yaw uniform in [0, pi/2).
+
+#disturbances.py
+class Disturbances:
+    def __init(self, model, cfg: dict): ...
+    def apply(self, data) -> None
+    def camera_blocked(self, t: float) ->
 
 # sensors.py   (THE ONLY pipeline-facing path to simulator state)
 class SensorSuite:
@@ -110,7 +119,8 @@ class SensorSuite:
 Rules for `sensors.py`:
 - Encoders give **only** `q`, with Gaussian noise `sigma_q` from config. Joint **velocities are not measured**, and that is why the observer exists.
 - Camera noise and dropouts (frame missing, object out of view) are injected here, never downstream.
-- Depth noise model is range dependent (see config `depth_noise`), so the filter's `R` can be justified from it.
+- Depth noise model is range dependent, `sigma = depth_a + depth_b * Z^2` (config `noise`), the same model `localise()` uses for `R`.
+- Encoder bias and camera blackout windows (Part E) are also applied here, so the pipeline sees them as it would on real hardware.
 
 ### 3.2 Modelling (`ur3pick/modelling/`)
 
@@ -147,6 +157,8 @@ def T_B_C(q: np.ndarray) -> np.ndarray       # = T_B_T(q) @ T_T_C()
 ```
 
 **Hard rule:** `localise` receives the **estimated** joint angles `q_hat`, never the true ones. Any error in `q_hat` must propagate into `p_B` and into `R`.
+**Hard rule:** `localise` receives the **estimated** joint angles `q_hat`, never the true ones. Any error in `q_hat` must propagate into `p_B` and into `R`.
+`localise` returns the cube **centre**: depth sees the top face, so `p_B[2]` is shifted down by `localisation.surface_to_centre` (0.02 m). Pass it `{**cfg["localisation"], **cfg["noise"]}`.
 
 ### 3.4 Estimation (`ur3pick/estimation/`)
 
@@ -232,7 +244,7 @@ loop every dt_ctrl:
     objf.predict(dt_ctrl)
     est  = Estimate(...)
     x_ref, grip, phase = grasp.step(est)
-    u    = lqr.command(est.x_hat, x_ref) + gravity_torque(est.x_hat[:6])   # see Open decisions, item 1
+        u    = lqr.command(est.x_hat, x_ref)       # no gravity feedforward: sim gravcomp cancels gravity (Open decisions, item 1)x_hat[:6])   # see Open decisions, item 1
     scene.step(Command(u, grip, phase))
     log.append(pkt, est, cmd, truth=read_truth(scene))   # truth goes to the log only
 ```

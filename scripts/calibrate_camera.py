@@ -27,12 +27,12 @@ def main(n=40):
     for s in range(n):
         scene.reset(1000 + s)
         mujoco.mj_forward(scene.model, scene.data)
-        sensors = SensorSuite(scene, cfg, scene.rngs["sensors"])
-        pkt = sensors.read(); sensors.close()
+        sensors = SensorSuite(scene, cfg, scene.rng)
+        pkt = sensors.read(); sensors.rgb_r.close(); sensors.depth_r.close()
         det = detect_object(pkt.rgb, cfg["detection"])
         if not det.found:
             continue
-        top = scene.data.xpos[scene.target_body] + np.array([0, 0, cfg["object"]["size"] / 2])
+        top = scene.data.xpos[mujoco.mj_name2id(scene.model, mujoco.mjtObj.mjOBJ_BODY, "target")] + np.array([0, 0, cfg["object"]["size"] / 2])
         p_C = frames.transform_point(frames.inv(frames.T_B_C(scene.data.qpos[:6])), top)
         pts.append((p_C, det.centroid_px))
     X = np.array([p for p, _ in pts]); uv = np.array([q for _, q in pts])

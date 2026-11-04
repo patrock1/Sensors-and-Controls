@@ -1,3 +1,7 @@
 ﻿.venv/
 __pycache__/
 *.pyc
+results/**
+!results/**/
+!results/**/.gitkeep
+models/ur3/ur3.xml

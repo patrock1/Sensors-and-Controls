@@ -5,19 +5,29 @@
     <global offwidth="640" offheight="480"/>
     <quality shadowsize="2048"/>
   </visual>
- 
+
   <include file="ur3/ur3.xml"/>
- 
+
   <worldbody>
     <light pos="0.3 0 1.5" dir="0 0 -1" diffuse="0.6 0.6 0.6" castshadow="false"/>
     <light pos="-0.5 0.5 1.2" dir="0.3 -0.3 -1" diffuse="0.3 0.3 0.3" castshadow="false"/>
+    <!-- Collision bits: ur3.xml default (contype 1, conaffinity 0) applies to every geom in this file too,
+         so table, floor and cube set their own. Bit 1 = arm, bit 2 = table/floor.
+         Cube conaffinity 3 = hit by arm and by table; arm and table never touch. -->
     <!-- Table: top surface at z = 0, robot base mounted on it at the origin -->
-    <geom name="table" type="box" pos="0.2 0 -0.02" size="0.6 0.6 0.02" rgba="0.75 0.7 0.6 1"/>
-    <geom name="floor" type="plane" pos="0 0 -0.04" size="2 2 0.1" rgba="0.3 0.3 0.3 1"/>
+    <geom name="table" type="box" pos="0.2 0 -0.02" size="0.6 0.6 0.02" rgba="0.75 0.7 0.6 1" contype="2" conaffinity="2"/>
+    <geom name="floor" type="plane" pos="0 0 -0.04" size="2 2 0.1" rgba="0.3 0.3 0.3 1" contype="2" conaffinity="2"/>
+    <!-- Overview camera for the demo video only, never used by the pipeline -->
+    <camera name="overview" pos="0.8 -0.8 0.7" xyaxes="0.8 0.6 0 -0.308 0.411 0.857"/>
     <!-- Target: red 4 cm cube. Pose is overwritten each trial by sim/randomise.py -->
     <body name="target" pos="0.3 0 0.02">
       <freejoint name="target_free"/>
-      <geom name="target_geom" type="box" size="0.02 0.02 0.02" mass="0.05" rgba="0.9 0.1 0.1 1"/>
+      <geom name="target_geom" type="box" size="0.02 0.02 0.02" mass="0.05" rgba="0.9 0.1 0.1 1" contype="2" conaffinity="3"/>
     </body>
   </worldbody>
+
+  <!-- Gripper stand-in: weld wrist3 to cube. Off at start, sim/scene.py switches it on only if cube is between fingers -->
+  <equality>
+    <weld name="grasp" body1="wrist3" body2="target" active="false"/>
+  </equality>
 </mujoco>

@@ -9,8 +9,11 @@ from ur3pick.modelling import ur3_params as P
 def T_B_T(q):
     return P.fkine(q)
 
-def T_T_C():
-    return P.T_T_C()
+def T_T_C(error=None):
+    T = P.T_T_C()
+    if error is not None:
+        T = T.copy(); T[:3, 3] += np.asarray(error, float)
+    return T
 
 def T_B_C(q):
     return T_B_T(q) @ T_T_C()

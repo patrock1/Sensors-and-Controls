@@ -62,7 +62,6 @@ def test_localisation_error_against_truth(world, cfg):
     det = detect_object(world["rgb"], cfg["detection"])
     meas = localise(det, world["depth"], K, world["q"], 0.0, {**cfg["localisation"], **cfg["noise"]})
     assert meas.valid
-    top = world["cube"] + np.array([0, 0, 0.02])
-    err = np.linalg.norm(meas.p_B - top)
+    err = np.linalg.norm(meas.p_B - world["cube"])
     assert err < 0.008, f"localisation error {1000 * err:.1f} mm"
     assert np.all(np.linalg.eigvalsh(meas.R) > 0)

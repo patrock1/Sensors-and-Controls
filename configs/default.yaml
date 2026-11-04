@@ -7,6 +7,7 @@ sim:
   dt_sim: 0.002
   dt_ctrl: 0.01      # control and abserver period
   dt_cam: 0.05        # 20 Hz camera
+  grasp_capture_depth: 0.05   # m, cube centre at most this far ahead of tool0 for the weld to catch it (descend_height 0.03 + margin)
   image_width: 320
   image_height: 240
 
@@ -29,6 +30,7 @@ detection:
 
 localisation:
   min_depth_px: 20
+  surface_to_centre: 0.02   # m, half of object.size: depth sees the top face, cube centre is this far below (measured +20.0 mm bias over 20 seeds)
 
 modelling:
   joint_inertia: [0.3503, 0.4300, 0.1060, 0.0164, 0.0116, 0.0103]   # diag(M) at the home pose, from sim/inertia.py
@@ -70,6 +72,7 @@ grasp:
   lift_height: 0.15           # m above the grasp point
   lift_tol: 0.01              # m
   phase_timeout: 8.0          # s per motion phase
+  hold_time: 1.0
   success_lateral_tol: 0.01   # m, cube centre within this of the tool axis when the gripper closes
   success_height: 0.10        # m, cube centre above the table at the end counts as picked
   success_hold_tol: 0.03      # m, cube centre within this of the tool origin (xy) at the end (interfaces.md 6 proposal)

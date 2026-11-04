@@ -26,7 +26,7 @@ def localise(det: Detection, depth, K, q_hat, t, cfg):
     Z = float(np.median(d))
     u, v = det.centroid_px
     p_C = Z * np.linalg.solve(K, np.array([u, v, 1.0]))
-    T = frames.T_B_C(q_hat)
+    T = frames.T_B_C(q_hat, cfg.get("hand_eye_error"))     # None unless the calibration_error sweep sets it
     p_B = frames.transform_point(T, p_C)
     p_B[2] -= cfg.get("surface_to_centre", 0.0)     # top face -> cube centre, base z is table normal
  

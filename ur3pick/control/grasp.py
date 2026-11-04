@@ -29,7 +29,7 @@ class GraspStateMachine:
     def _servo_to_cube(self, q, p_B, height):
         p_T = frames.transform_point(frames.inv(frames.T_B_T(q)), p_B)
         t_star = np.array([0, 0, height])
-        nu = pbvs_twist(p_T, t_star, self.g["lam"])
+        nu = pbvs_twist(p_T, t_star, self.s["lam"])
         qd, _ = resolved_rate(self.robot, q, nu, self.s["qd_limit"])
         return qd, float(np.linalg.norm(p_T - t_star))
 
@@ -60,7 +60,7 @@ class GraspStateMachine:
                 self._go("descend", t)
 
         elif self.phase == "descend":
-            qd, err = self._servo_to_cube(q, self.q_target, self.s["descend_height"])
+            qd, err = self._servo_to_cube(q, self.q_target, self.g["descend_height"])
             if err < self.g["descend_tol"]:
                 self._go("grasp", t)
 
@@ -80,7 +80,7 @@ class GraspStateMachine:
         elif self.phase not in ("search", "done") and in_phase > self.g["phase_timeout"]:
             self._fail("timeout", t)
 
-        q_ref, qd_ref = self.ref.step(q, qd)    
+        q_ref, qd_ref = self.ref.step(qd)    
         return np.r_[q_ref, qd_ref], self.gripper, self.phase
 
     @property

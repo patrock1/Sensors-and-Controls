@@ -1,11 +1,15 @@
 # Part E: what happens if the hand-eye offset or the focal length the estimator uses is wrong.
 # hand_eye_error: metres, in the tool frame. fovy_error_deg: added to the true 60 deg.
+# 15 mm added to locate the failure onset between 10 and 20 mm; 30 mm and +10 deg to find the limit.
 name: calibration_error
 n_seeds: 20
 levels:
   - {name: "perfect", overrides: {}}
   - {name: "hand-eye 5 mm", overrides: {calibration.hand_eye_error: [0.005, 0.0, 0.0]}}
   - {name: "hand-eye 10 mm", overrides: {calibration.hand_eye_error: [0.010, 0.0, 0.0]}}
+  - {name: "hand-eye 15 mm", overrides: {calibration.hand_eye_error: [0.015, 0.0, 0.0]}}
   - {name: "hand-eye 20 mm", overrides: {calibration.hand_eye_error: [0.020, 0.0, 0.0]}}
+  - {name: "hand-eye 30 mm", overrides: {calibration.hand_eye_error: [0.030, 0.0, 0.0]}}
   - {name: "fovy +2 deg", overrides: {calibration.fovy_error_deg: 2.0}}
   - {name: "fovy +5 deg", overrides: {calibration.fovy_error_deg: 5.0}}
+  - {name: "fovy +10 deg", overrides: {calibration.fovy_error_deg: 10.0}}

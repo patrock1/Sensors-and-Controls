@@ -23,6 +23,7 @@ def _log(lifted=True, final="done", p_err=(0.003, -0.004, 0.0), T=300, dt=0.01):
     x_hat = np.hstack([gt_q, gt_qd]) + rng.normal(0, 1e-2, (T, 12))   # error sigma matches P
     return dict(t=t, phase=phase, p_hat=p_hat, gt_p_obj=cube, gt_p_tool=tool, x_hat=x_hat, P_x=P,
                 gt_q=gt_q, gt_qdot=gt_qd, u=np.ones((T, 6)),
+                p_meas=p_hat.copy(), meas_valid=np.isfinite(p_hat).all(axis=1),   # raw = filtered by default
                 meta=json.dumps({"seed": 7, "failure_cause": "none"}))
 
 
@@ -52,6 +53,33 @@ def test_object_never_seen(cfg):
     log["phase"][:] = "search"
     m = trial_metrics(log, cfg)
     assert not m["success"] and np.isnan(m["obj_err_freeze"])
+
+
+def test_large_error_in_raw_measurements_is_sensing(cfg):
+    """Hand-eye style failure: raw localisations and the estimate are both 25 mm off (> 20 mm capture radius)."""
+    m = trial_metrics(_log(lifted=False, p_err=(0.025, 0.0, 0.0)), cfg)
+    assert not m["success"] and m["failure_cause"] == "sensing"
+    assert abs(m["meas_err_freeze_xy"] - 0.025) < 1e-9
+
+
+def test_bias_just_under_radius_in_raw_is_still_sensing(cfg):
+    """Raw 19.7 mm, estimate 20.5 mm: the same bias passing through, not a filter fault."""
+    log = _log(lifted=False, p_err=(0.0205, 0.0, 0.0))
+    log["p_meas"] = log["gt_p_obj"] + np.array([0.0197, 0.0, 0.0])
+    assert trial_metrics(log, cfg)["failure_cause"] == "sensing"
+
+
+def test_good_measurements_bad_estimate_is_estimator(cfg):
+    log = _log(lifted=False, p_err=(0.025, 0.0, 0.0))
+    log["p_meas"] = log["gt_p_obj"] + np.array([0.002, 0.0, 0.0])   # camera chain fine, filter wrong
+    m = trial_metrics(log, cfg)
+    assert m["failure_cause"] == "estimator"
+
+
+def test_state_machine_cause_wins(cfg):
+    log = _log(lifted=False, p_err=(0.025, 0.0, 0.0), final="failed")
+    log["meta"] = json.dumps({"seed": 7, "failure_cause": "timeout"})
+    assert trial_metrics(log, cfg)["failure_cause"] == "timeout"
 
 
 def test_wilson_stays_inside_0_1():

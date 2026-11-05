@@ -27,6 +27,8 @@ from ur3pick.estimation.consistency import nees
 FREEZE_PHASE = "descend"
 GRASP_PHASE = "grasp"
 NEES_SKIP_S = 0.5        # s: ignore the start, while P is still shrinking from its initial value
+SENSING_SHARE = 0.5      # raw error >= half the estimate's error -> the camera chain explains the miss
+MEAS_WINDOW = 5         # first valid raw localisations used (median): one noisy frame should not decide the cause
 
 
 def _phases(log):
@@ -75,13 +77,48 @@ def joint_nees(log, skip_s=NEES_SKIP_S):
     return float(np.mean(vals)) if vals else float("nan")
 
 
-def _cause(meta, success):
-    """A failed trial whose log says 'none' (or nothing) is 'undiagnosed', so it stands out in the
-    failure table until someone traces it to model, sensing, estimator or controller."""
+def capture_radius(cfg):
+    """Largest lateral (xy) estimate error the grasp can absorb: half the cube edge. Beyond it the
+    tool closes beside the cube instead of over it, which is the 20 mm hand-eye limit in Part E."""
+    return cfg["object"]["size"] / 2
+
+
+def raw_meas_err_xy(log, k, n=MEAS_WINDOW):
+    """Median xy error of the FIRST n valid raw localisations (p_meas) up to step k.
+    Comparing this with the filtered error at the freeze point tells sensing apart from estimator.
+
+    Why the first and not the last: late in approach the camera is close and the cube starts to
+    leave the image, so raw localisations degrade (~25 mm off in nominal trials) and the object
+    filter's chi-square gate rejects them. The estimate is built from the early measurements taken
+    near the home pose, so those are the ones to compare it against."""
+    if k is None or "p_meas" not in log:
+        return float("nan")
+    p_meas = np.asarray(log["p_meas"], float)[: k + 1]
+    p_true = np.asarray(log["gt_p_obj"], float)[: k + 1]
+    valid = np.asarray(log.get("meas_valid", np.isfinite(p_meas).all(axis=1)), bool)[: k + 1]
+    idx = np.flatnonzero(valid & np.isfinite(p_meas).all(axis=1))[:n]
+    if idx.size == 0:
+        return float("nan")
+    return float(np.median(np.linalg.norm(p_meas[idx, :2] - p_true[idx, :2], axis=1)))
+
+
+def _cause(meta, success, err_xy, meas_xy, radius):
+    """Failure cause for the README table, in order of how certain we are:
+      1. the state machine's own diagnosis (e.g. 'sensing' on search timeout) wins: it knows why it stopped;
+      2. the frozen estimate was off by more than the capture radius, so the arm went to the wrong place:
+         'sensing' if the raw localisations explain most of that error (camera chain: calibration,
+         detection, depth), 'estimator' if the filter made the estimate much worse than its inputs;
+      3. anything else stays 'undiagnosed' rather than guessing, so it stands out until someone traces it."""
     if success:
         return "none"
     c = meta.get("failure_cause", "none")
-    return "undiagnosed" if c in (None, "", "none") else c
+    if c not in (None, "", "none"):
+        return c
+    if np.isfinite(err_xy) and err_xy > radius and np.isfinite(meas_xy):
+        # compare the two errors with each other, not each with the radius: near the radius a bias of
+        # 19.7 mm raw / 20.1 mm filtered is plainly the same sensing error passing through the filter
+        return "sensing" if meas_xy >= SENSING_SHARE * err_xy else "estimator"
+    return "undiagnosed"
 
 
 def trial_metrics(log, cfg) -> dict:
@@ -107,16 +144,18 @@ def trial_metrics(log, cfg) -> dict:
     kg = _first(ph == GRASP_PHASE)
     success = truth_success(log, cfg)
     claimed = bool(ph[-1] == "done")
+    meas_xy = raw_meas_err_xy(log, k)
     return dict(
         seed=meta.get("seed", -1),
         success=success,
         claimed_success=claimed,
         disagree=success != claimed,                 # state machine and truth disagree -> diagnose
         final_phase=str(ph[-1]),
-        failure_cause=_cause(meta, success),
+        failure_cause=_cause(meta, success, err_xy, meas_xy, capture_radius(cfg)),
         obj_err_freeze=err,
         obj_err_freeze_xy=err_xy,
         obj_err_freeze_z=err_z,
+        meas_err_freeze_xy=meas_xy,
         t_grasp=float(t[kg]) if kg is not None else float("nan"),
         t_end=float(t[-1]),
         nees_joint=joint_nees(log),

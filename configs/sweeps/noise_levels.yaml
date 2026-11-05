@@ -1,5 +1,6 @@
 # Part E: sensor noise sweep. Each level multiplies every noise source together.
 # overrides use dotted keys into default.yaml.
+# 16x and 32x added after the first run stayed at 100% up to 8x.
 name: noise_levels
 n_seeds: 20
 levels:
@@ -7,3 +8,9 @@ levels:
   - {name: "2x", overrides: {noise.sigma_q: 0.001, noise.depth_a: 0.003, noise.depth_b: 0.0044, noise.pixel_sigma: 1.0}}
   - {name: "4x", overrides: {noise.sigma_q: 0.002, noise.depth_a: 0.006, noise.depth_b: 0.0088, noise.pixel_sigma: 2.0}}
   - {name: "8x", overrides: {noise.sigma_q: 0.004, noise.depth_a: 0.012, noise.depth_b: 0.0176, noise.pixel_sigma: 4.0}}
+  - {name: "16x", overrides: {noise.sigma_q: 0.008, noise.depth_a: 0.024, noise.depth_b: 0.0352, noise.pixel_sigma: 8.0}}
+  - {name: "32x", overrides: {noise.sigma_q: 0.016, noise.depth_a: 0.048, noise.depth_b: 0.0704, noise.pixel_sigma: 16.0}}
+  # mismatched: sim noise scaled, filters keep nominal R (matched levels above are optimistic)
+  - {name: "8x true, nominal R", overrides: {noise.true_scale: 8.0}}
+  - {name: "16x true, nominal R", overrides: {noise.true_scale: 16.0}}
+  - {name: "32x true, nominal R", overrides: {noise.true_scale: 32.0}}

@@ -84,7 +84,8 @@ def run_trial(seed: int, cfg:dict, frame_cb=None) -> dict:
 
     fovy = cfg["camera"]["fovy_deg"] + cfg.get("calibration", {}).get("fovy_error_deg", 0.0)
     K = intrinsics_from_fovy(fovy, W, H)
-    lcfg = {**cfg["localisation"], ** cfg["noise"]}
+    lcfg = {**cfg["localisation"], ** cfg["noise"],
+            "hand_eye_error": cfg.get("calibration", {}).get("hand_eye_error")}   # estimator-side only, like fovy_error_deg above
     g = cfg["grasp"]
     t_max = g["search_timeout"] + 4 * g["phase_timeout"]        # hard stop in a normal trial
 

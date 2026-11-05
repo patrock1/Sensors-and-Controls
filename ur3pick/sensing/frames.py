@@ -15,8 +15,9 @@ def T_T_C(error=None):
         T = T.copy(); T[:3, 3] += np.asarray(error, float)
     return T
 
-def T_B_C(q):
-    return T_B_T(q) @ T_T_C()
+def T_B_C(q, hand_eye_error=None):
+    """Camera pose in base. hand_eye_error (m, tool frame) is the estimator's calibration error for the Part E sweep; the sim camera never uses this."""
+    return T_B_T(q) @ T_T_C(hand_eye_error)
 
 def inv(T):
     R, t = T[:3, :3], T[:3, 3]

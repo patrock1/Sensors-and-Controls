@@ -20,6 +20,7 @@ noise:
   depth_b: 0.0022
   pixel_sigma: 0.5    # px, centroid noise (asumption)
   dropout_prob: 0.01
+  true_scale: 1.0     # sim-only noise multiplier, filters keep the values above for R (Part E mismatch test)
 
 detection:
   hue_max: 10         # OpenCV hue is 0.179; red wraps around 0

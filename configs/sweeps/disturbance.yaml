@@ -1,10 +1,19 @@
 # Part E: disturbances and model mismatch.
+# Harsher levels added after the first 20-seed run gave 100% everywhere, to find where the system breaks.
 name: disturbance
 n_seeds: 20
 levels:
   - {name: "none", overrides: {}}
   - {name: "push 5 N, 1 s", overrides: {disturbance: {force: [0.0, 5.0, 0.0], t_start: 1.0, t_end: 2.0}}}
   - {name: "push 10 N, 1 s", overrides: {disturbance: {force: [0.0, 10.0, 0.0], t_start: 1.0, t_end: 2.0}}}
+  - {name: "push 20 N, 1 s", overrides: {disturbance: {force: [0.0, 20.0, 0.0], t_start: 1.0, t_end: 2.0}}}
+  - {name: "push 40 N, 1 s", overrides: {disturbance: {force: [0.0, 40.0, 0.0], t_start: 1.0, t_end: 2.0}}}
+  - {name: "push 20 N in descend", overrides: {disturbance: {force: [0.0, 20.0, 0.0], t_start: 4.0, t_end: 5.0}}}
   - {name: "camera blackout 0.5 s", overrides: {disturbance: {blackout: [[0.5, 1.0]]}}}
+  - {name: "camera blackout 1-3 s", overrides: {disturbance: {blackout: [[1.0, 3.0]]}}}
   - {name: "encoder bias 0.01 rad", overrides: {disturbance: {encoder_bias: 0.01}}}
+  - {name: "encoder bias 0.03 rad", overrides: {disturbance: {encoder_bias: 0.03}}}
+  - {name: "encoder bias 0.05 rad", overrides: {disturbance: {encoder_bias: 0.05}}}
   - {name: "gravity comp 90 %", overrides: {sim.gravcomp: 0.9}}
+  - {name: "gravity comp 70 %", overrides: {sim.gravcomp: 0.7}}
+  - {name: "gravity comp 50 %", overrides: {sim.gravcomp: 0.5}}

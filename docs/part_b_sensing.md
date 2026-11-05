@@ -51,7 +51,9 @@ Part E shows how sensitive the system is to calibration error. A focal length er
 
 The chain from measurement to the quantity the controller acts on is:
 
-    pixel (u, v) + depth Z  ->  p_C  ->  T_B_C(q_hat) = T_B_T(q_hat) * T_T_C  ->  p_B  ->  object filter (Part C)  ->  grasp target
+    pixel (u, v) + depth Z  ->  p_C
+    p_C  ->  T_B_C(q_hat) = T_B_T(q_hat) * T_T_C  ->  p_B
+    p_B  ->  object filter (Part C)  ->  grasp target
 
 `T_B_T` is the standard DH forward kinematics in `modelling/ur3_params.py`. The hand-eye transform `T_T_C` is a pure translation of [0, 0.05, 0.07] m in the tool frame because the camera axes are built to line up with the tool axes. Its value lives in one place (`CAM_OFFSET_IN_TOOL`) and both the MJCF generator and `frames.py` read it.
 
@@ -65,8 +67,8 @@ Localisation over 20 seeds from the home pose, using noisy encoder readings as `
 
 | | x | y | z |
 |---|---|---|---|
-| mean error before top-face fix | | | +20.0 mm |
-| mean error after fix | -0.2 mm | -0.6 mm | -0.0 mm |
+| mean error before top-face fix | -0.2 mm | -0.6 mm | +20.0 mm |
+| mean error after fix | -0.2 mm | -0.6 mm | 0.0 mm |
 
 The median lateral error is 0.7 mm and all 20 seeds were localised. In the full eval runs the object error at the moment the arm commits to the grasp has a median of 0.8 mm (Part E).
 
@@ -80,7 +82,7 @@ Reproduce with `python scripts/check_localise.py --n 20` and `python scripts/cal
 
 ## Limitations
 
-- **R ignores joint estimate uncertainty.** It only includes camera noise even though `q_hat` errors move `p_B`. This is why the encoder bias test in Part E produces object errors the filter does not expect.
+- **R ignores joint estimate uncertainty.** It only includes camera noise even though `q_hat` errors also move `p_B`. The object filter is never told about this error source, and a systematic error like the encoder bias in Part E is not covered by R at all.
 - **The cube leaves the view late in the approach.** Raw localisations degrade to about 25 mm and are rejected by the object filter's gate.
 - **Pixel noise is not added to the image.** `pixel_sigma` only sets R.
 - **Detection relies on colour.** It works because the cube is the only red object in the scene.

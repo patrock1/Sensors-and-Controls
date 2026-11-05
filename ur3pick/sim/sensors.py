@@ -3,6 +3,8 @@ sensors.py
 Sim side: the ONLY pipeline-facing path to simulator state (interfaces.md 3.1).
 Encoders: q only plus gaussian noise (+ Part E bias), no qdot (reason observer exists).
 Wrist camera: rgb + depth every dt_cam, range dependent depth noise, random dropouts, Part E blackout windows.
+noise.true_scale multiplies the noise the sim actually adds WITHOUT changing the sigma values the
+filters read for R, so the Part E sweep can test mismatched (underestimated) noise, not just matched.
 """
 import numpy as np
 import mujoco
@@ -18,8 +20,9 @@ class SensorSuite:
         sim, noise = cfg["sim"], cfg["noise"]
         self.h, self.w = sim["image_height"], sim["image_width"]
         self.dt_cam = sim["dt_cam"]
-        self.sigma_q = noise["sigma_q"]
-        self.depth_a, self.depth_b = noise["depth_a"], noise["depth_b"]
+        k = noise.get("true_scale", 1.0)                  # sim only, filters still assume nominal noise
+        self.sigma_q = noise["sigma_q"] * k
+        self.depth_a, self.depth_b = noise["depth_a"] * k, noise["depth_b"] * k
         self.dropout = noise["dropout_prob"]
         # separate renderers for rgb and depth: toggling one renderer between modes
         # dropped the cube from later rgb frames on macOS

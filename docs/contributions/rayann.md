@@ -1,0 +1,1 @@
+**Rayann Doha:** Built the simulation and sensor layer (scene, sensor noise models, cube randomisation, Part E disturbances). Found and fixed the collision bug that let the cube fall through the table, the 20 mm top-face localisation bias and the unapplied hand-eye calibration error. Ran the Part E robustness sweeps and wrote the Part B and E sections.

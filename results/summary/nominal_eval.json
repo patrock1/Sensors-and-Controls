@@ -1,0 +1,19 @@
+{
+  "n": 50,
+  "success_rate": 1.0,
+  "ci_low": 0.9286499658256813,
+  "ci_high": 1.0,
+  "obj_err_freeze_median": 0.0006760009810870193,
+  "obj_err_freeze_p90": 0.0021607398225345327,
+  "obj_err_xy_median": 0.0006198156112763077,
+  "obj_err_z_median": -0.00022912962457911912,
+  "t_grasp_median": 5.09999999999966,
+  "nees_joint_median": 6.633198799133713,
+  "est_q_rms_median": 0.0004821837337040607,
+  "est_qd_rms_median": 0.09383817309232356,
+  "u_rms_median": 2.4747776158601775,
+  "track_rms_median": 0.0017992335200889818,
+  "track_max_p90": 0.019586114693075352,
+  "disagreements": 0,
+  "failure_causes": {}
+}

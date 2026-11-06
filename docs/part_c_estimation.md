@@ -8,7 +8,7 @@ Model. 'estimation/joint_observer.py: JointKF' is a linear Kalman filter on the 
 
 Measurement noise R. 'R = sigma_q^2 I' with 'sigma_q' = 0.0005 rad, the same value the simulator adds to the encoders (Part B). R is not a tuning knob. It is the sensor specification. 
 
-Process noise Q Q stands for everything the linear model leaves out: the inertia change with pose (up to 44% on the base joint, Part A), Coriolis terms, and external pushes. It is modelled as an unknown torque 'w ~ N(0, sigma_tau^2)' on each joint. That torque becomes a white acceleration `w / M_i`, and the standard discretisation for white acceleration gives 
+Process noise Q. Q stands for everything the linear model leaves out: the inertia change with pose (up to 44% on the base joint, Part A), Coriolis terms, and external pushes. It is modelled as an unknown torque 'w ~ N(0, sigma_tau^2)' on each joint. That torque becomes a white acceleration `w / M_i`, and the standard discretisation for white acceleration gives 
 Qd_i = q_i * [ dt^3/3   dt^2/2 ]      q_i = (sigma_tau,i / M_i)^2 * dt
                  [ dt^2/2   dt     ]
 
@@ -26,11 +26,11 @@ Results over the 10 dev seeds
 | Joint velocity estimate error (RMS, all joints) | 93 mrad/s |
 | Mean joint NEES (12 states, consistent filter gives 12) | 6.6 (median over trials) |
 
-The angle error equals the predicted 1-sigma, so the angle half of the state is consistent. A NEES of 6.6 instead of 12 means the filter is about 2x sonservative, meaning its velocity covariance is larger than the real velocity error. This is a deliberate consequence of sizing 'sigma_tau for the worst case. In a smooth nominal trial the unmodelled torque is small, so the filter covers more than it needs to. The trade-off below shows what happens when it is made smaller
+The angle error equals the predicted 1-sigma, so the angle half of the state is consistent. A NEES of 6.6 instead of 12 means the filter is about 2x conservative, meaning its velocity covariance is larger than the real velocity error. This is a deliberate consequence of sizing 'sigma_tau for the worst case. In a smooth nominal trial the unmodelled torque is small, so the filter covers more than it needs to. The trade-off below shows what happens when it is made smaller
 
 Trade off: consistency against responsiveness
 
-`configs/sweeps/observer_tuning.yaml` scales `sigma_tau` by one factor from x0.03 to x10 and changes nothing else. `observer_tuning_push.yaml` repeats the same levels with the 40 N, 1 s wrist push from Part E. Results (5 dev seeds per level, all levels 100% success)
+`configs/sweeps/observer_tuning.yaml` scales `sigma_tau` by one factor from x0.03 to x10 and changes nothing else. `observer_tuning_push.yaml` repeats the same levels with the 40 N, 1 s wrist push from Part E. Results (5 dev seeds per level, all levels 100% success; reproduce with `python scripts/run_sweep.py observer_tuning --seeds dev --n 5` and the same for `observer_tuning_push`. The committed 20-eval-seed versions in `results/summary/` give the same picture)
 
 | sigma_tau | Nominal: NEES | Nominal: velocity error | Nominal: torque u_rms | With 40 N push: NEES | With push: velocity error |
 |---|---|---|---|---|---|
@@ -47,11 +47,13 @@ Too small (x0.03-x0.1). In a nominal trial the filter looks excellent: it trusts
 Too large (x3-x10). The filter trusts the encoders, so their noise passes straight into the velocity estimate (115-126 mrad/s). The LQR turns that noise into torque (3.9-4.6 N m). NEES falls further below 12 (conservative).
 x0.33 is the only level that is close to consistent under the push (NEES 11.0, ideal 12) while also giving the smallest velocity error with the push. In nominal trials it halves the velocity error and the torque compared with x1. 
 
-*The final configuration keeps x1 as a margin for disturbances larger than the 40 N push tested. x0.33 is the better-tuned choice for the conditions we tested and is reported here as the recommended setting.*
+*The final configuration keeps x1. This sweep was run after the coupled controller fix (Part D, issue #4), once the final evaluation was already under way, and switching would have meant re-running every result. x1 is consistent in every condition tested, just conservative. x0.33 is the better-tuned choice for these conditions and is the recommended next step.*
+
+Why x1 ended up conservative: `sigma_tau` was raised 3x during early tuning to fix a NEES of about 98. That was before the joint 3 oscillation was fixed, and the oscillation was most likely what drove the NEES up: once it was fixed, mean NEES fell from 12.2 to 6.6 with no change to the observer.
 
 Estimator speed
 
-The estimaotors slowest closed loop mode decays 9.7 times faster than the controllers (`design_report.py`). The Week 8 rule of thumb is 2-5x for a pole-placement observer, because a faster observer amplifies measurement noise. That rule does not carry over directly to a Kalman filter: here the gain is the optimum for the started noise and it is high because the encoders are very precise (0.5 mrad). The cost of the fast observer is the velocity noise in the table above, and that is exactly what the `sigma_tau` sweep trades off. The seperation principle holds: the closed-loop eigenvalues of the combined controller and observer are the union of the two designs to 3.7e-15 (`modelling/analysis.py: separation_check`).
+The estimator's slowest closed loop mode decays 9.7 times faster than the controllers (`design_report.py`). The Week 8 rule of thumb is 2-5x for a pole-placement observer, because a faster observer amplifies measurement noise. That rule does not carry over directly to a Kalman filter: here the gain is the optimum for the stated noise and it is high because the encoders are very precise (0.5 mrad). The cost of the fast observer is the velocity noise in the table above, and that is exactly what the `sigma_tau` sweep trades off. The separation principle holds: the closed-loop eigenvalues of the combined controller and observer are the union of the two designs to 3.7e-15 (`modelling/analysis.py: separation_check`).
 
 Object filter
 
@@ -77,6 +79,6 @@ The estimate is about 25 times more accurate than the grasp needs. The object NE
 Summary
 
 The joint velocities, which are not measured, are estimated to 93 mrad/s RMS, and the joint angles to 0.48 mrad, the encoder noise level
-The joint filter is 2x conservative in nominal trials and consistent under a 40 N push at x0.33. The `sigma_tau` sweep quantifies the consistency/responsiveness trade-off and shows that a filter turned to look best nominally fails badly under disturbance. 
+The joint filter is 2x conservative in nominal trials and consistent under a 40 N push at x0.33. The `sigma_tau` sweep quantifies the consistency/responsiveness trade-off and shows that a filter tuned to look best nominally fails badly under disturbance. 
 The object filter places the cube to 0.84 mm median with a chi-square gate against bad frames, and is conservative by design. 
-All numbers come from `python -m scripts.design_report`, `python scripts/run_trials.py --seeds dev` and `python scripts/run_sweep.py observer_tuning` / `observer_tuning_push`.
+All numbers come from `python -m scripts.design_report`, `python scripts/run_trials.py --seeds dev` and `python scripts/run_sweep.py observer_tuning --seeds dev --n 5` / `observer_tuning_push --seeds dev --n 5`.

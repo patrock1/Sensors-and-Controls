@@ -23,7 +23,7 @@ INTEGRAL ACTION. The state is augmented with the integral of the joint angle err
 
 The torque is clipped to the same limits after the LQR, matching the MJCF motors. The closed loop is stable with a largest discrete eigenvalue magnitude of 0.905, a time constant of about 0.1 s (`design_report.py`).
 
-THE LAW is `u = -K (x_hat - x_ref) - Ki xi`. Because the estimator and the controller are designed seperately, the seperation principle holds for the combined system (Part C).
+THE LAW is `u = -K (x_hat - x_ref) - Ki xi`. Because the estimator and the controller are designed separately, the separation principle holds for the combined system (Part C).
 
 ## Outer loop: grasp state machine and PBVS
 
@@ -71,11 +71,11 @@ Designing on the full mass matrix fixed it. Same 4 seeds, same conditions:
 | encoder bias 0.05 rad | 104 -> **0** | 7.4 -> 2.4 | 49.8 -> 50.0 |
 | 4x sensor noise | 69 -> **0.2** | 13.0 -> 9.3 | 3.70 -> 2.16 |
 
-Success was 4/4 in every condition with both designs. The change removed the saturation, roughly halved the torque, and left tracking the same of better
+Success was 4/4 in every condition with both designs. The change removed the saturation, roughly halved the torque, and left tracking the same or better
 
 ### Trade-off: control effort against tracking error
 
-`configs/sweeps/lqr_tuning.yaml` changes only the angle-error limit `q_err_max` (smaller = stiffer) and keeps everything else fixed (5 dev seeds per level, all 100 % success, `docs/figures/tradeoff_lqr_tuning.png`):
+`configs/sweeps/lqr_tuning.yaml` changes only the angle-error limit `q_err_max` (smaller = stiffer) and keeps everything else fixed (5 dev seeds per level, all 100 % success, `python scripts/run_sweep.py lqr_tuning --seeds dev --n 5`; figure from the committed 20-eval-seed run, `docs/figures/tradeoff_lqr_tuning.png`):
 
 | q_err_max | Tracking RMS | RMS torque |
 |---|---|---|
@@ -87,7 +87,7 @@ Success was 4/4 in every condition with both designs. The change removed the sat
 
 Each halving of `q_err_max` cuts the tracking error by about 30% for 10-25% more torque. With the coupled design the stiffer settings stay stable and saturation-free. With the earlier decoupled design, the stiffest setting made tracking worse (2.7 mrad at 12.9 N m), because the gain amplified sensor noise
 
-The stiffer settings were not adopted because tracking does not limit the grasp. 1.79 mrad of joint error is under 1mm at the tool, the same size as the object estimate error (0.84mm, Part C), and both are far inside the 20mm capture radius. Halving the tracking error would not change the success rate, but it would raise the troque and make the loop more sensitive to the noise and disturbances in part E. Under 4x sensor noise the nominal gain already uses 9.3 N m. 
+The stiffer settings were not adopted because tracking does not limit the grasp. 1.79 mrad of joint error is under 1mm at the tool, the same size as the object estimate error (0.84mm, Part C), and both are far inside the 20mm capture radius. Halving the tracking error would not change the success rate, but it would raise the torque and make the loop more sensitive to the noise and disturbances in part E. Under 4x sensor noise the nominal gain already uses 9.3 N m. 
 
 ## Summary
 
@@ -96,4 +96,4 @@ PBVS outer loop with a 1s time constant and a 1 rad/s rate limit, inside a 6 pha
 One controller failure (joint 3 oscillation) diagnosed to the model and fixed by the coupled design, with before/after numbers.
 The effort/tracking trade off is quantified, and the chosen gain is defended by what limits the task (estimate accuracy and capture radius), not by tracking alone.
 
-All numbers come from `python -m scripts.design_report`, `python scripts/run_trials.py --seeds dev` and `python scripts/run_sweep.py lqr_tuning`.
+All numbers come from `python -m scripts.design_report`, `python scripts/run_trials.py --seeds dev` and `python scripts/run_sweep.py lqr_tuning --seeds dev --n 5`.

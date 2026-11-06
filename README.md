@@ -111,13 +111,13 @@ p_B  ->  object filter  ->  PBVS target  ->  LQR torque
 
 Full write-up: `docs/part_a_modelling.md`
 
+TODO: check this matches the final Part A doc
 - Each joint modelled as `M q̈ + b q̇ = τ`, 12 states (q and q̇), torques in, encoder angles out, discretised with ZOH at 10 ms
 - M read from MuJoCo at the home pose, b matches the MJCF damping
 - Assumptions: gravity cancelled by the sim's gravity compensation, inertia fixed at the home pose, joint coupling
 - First design used only the diagonal of M (joints treated as independent). Joints 2 and 3 are strongly coupled and this caused the joint 3 oscillation in Section 9. Final design uses the full inertia matrix.
 - Controllable and observable per joint and for the full system. Encoders alone make it observable, tachometers alone don't, so velocity has to be estimated (Part C)
 
-TODO: check this matches the final Part A doc
 
 ## 5. Part B: Sensing, calibration and frames
 
@@ -147,7 +147,7 @@ Full write-up: `docs/part_c_estimation.md`
 
   - Too small and the filter trusts its model too much: fine when nothing happens, badly overconfident when the arm gets pushed (NEES in the hundreds to thousands).
   - Too large and it trusts the noisy encoders too much: always consistent, but encoder noise goes straight into the velocity estimate and the torque.
-  - x0.33 is the best balance (NEES 11.1 under a push, close to the ideal 12, and half the torque noise). We kept x1 because it was tuned on the dev seeds, and switching to a value picked from this eval-seed sweep would be tuning on the test set. x1 is consistent everywhere, just conservative. x0.33 is the recommended next step.
+  - x0.33 is the best balance (NEES 11.1 under a push, close to the ideal 12, and half the torque noise), on both the dev and eval seeds. We kept x1 because the sweep was run after the coupled controller fix, once the final evaluation was already under way, and switching would have meant re-running every result. x1 is consistent everywhere, just conservative. x0.33 is the recommended next step.
   - Why x1 ended up conservative: it was raised 3x during tuning to fix very high NEES (98). That was before the joint 3 oscillation was fixed (Section 9), and the oscillation was most likely what drove the NEES up: once it was fixed, NEES dropped from 12.2 to 6.6 on average with no observer change, and the extra margin was no longer needed.
 
   ![Observer trade-off](docs/figures/tradeoff_observer_tuning_push.png)
@@ -171,8 +171,7 @@ Full write-up: `docs/part_d_control.md`
   - 0.05 rad sits at the knee: going from 0.20 to 0.05 rad cuts tracking error by 40 % for about 9 % more torque, but going further to 0.0125 rad costs another 44 % torque. The tracking error at 0.05 rad (1.8 mrad, under 1 mm at the tool) is already much smaller than the object estimate error, so tighter tracking wouldn't improve the grasp.
 
   ![LQR trade-off](docs/figures/tradeoff_lqr_tuning.png)
-- Estimator vs controller speed. TODO: explain the ratio
-- Update - decoupled design goes unstable with updated speed ratio
+- Estimator vs controller speed: the joint filter's slowest closed-loop mode is 9.7x faster than the controller's (`python -m scripts.design_report`). The Week 8 rule of 2 to 5x is for pole-placement observers, where a faster observer amplifies noise. A Kalman filter's speed instead comes from the noise model (fast here because the encoders are precise), and its cost shows up as the velocity noise traded off in Part C. The separation principle holds to 3.7e-15. Details in `docs/part_c_estimation.md`.
 
 ## 8. Part E: Integration and robustness
 

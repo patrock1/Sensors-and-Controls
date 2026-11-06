@@ -35,6 +35,14 @@ localisation:
 
 modelling:
   joint_inertia: [0.3503, 0.4300, 0.1060, 0.0164, 0.0116, 0.0103]   # diag(M) at the home pose, from sim/inertia.py
+  coupled: true    # design LQR + observer on the full M below, not diag(M) (issue #4: decoupled design oscillates joint 3)
+  inertia_matrix:  # full 6x6 M at home_q, from sim/inertia.joint_inertia (symmetric, positive definite)
+    - [0.3503, -0.0384, -0.0337, 0.0016, -0.0032, -0.0003]
+    - [-0.0384, 0.4300, 0.1360, -0.0167, -0.0000, -0.0000]
+    - [-0.0337, 0.1360, 0.1060, -0.0008, 0.0000, -0.0000]
+    - [0.0016, -0.0167, -0.0008, 0.0164, 0.0000, -0.0000]
+    - [-0.0032, -0.0000, 0.0000, 0.0000, 0.0116, -0.0000]
+    - [-0.0003, -0.0000, -0.0000, -0.0000, -0.0000, 0.0103]
   damping: 1.0     # matches the MJCF joint damping
   home_q: [0.466, -3.029, 1.141, 0.318, -1.571, 0.0]
 

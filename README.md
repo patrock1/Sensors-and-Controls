@@ -178,11 +178,28 @@ Full write-up: `docs/part_d_control.md`
 
 Full write-up: `docs/part_e_robustness.md`
 
-- Disturbances: wrist pushes, camera blackouts, reduced gravity compensation, encoder bias
-- Calibration errors: hand-eye offset, focal length
-- Sensor noise: filters that know the noise vs filters that don't
-- Every failed trial gets a cause automatically (sensing / estimator / undiagnosed)
-- TODO: summary of each sweep + figures, updated for the final controller
+Each test runs 20 eval seeds per level on the final coupled controller. Disturbances are injected only inside `ur3pick/sim/`, so the pipeline sees them the same way it would see real ones. Every failed trial is labelled with a cause automatically.
+
+| Test | Levels | Success |
+|---|---|---|
+| Wrist push for 1 s | 5 to 40 N, plus 20 N during descend | 100 % at every level (tracking RMS 1.8 to 12.1 mrad) |
+| Camera blackout | 0.5 s, 1 to 3 s | 100 %, the object filter holds its estimate |
+| Reduced gravity compensation | 90, 70, 50 % | 100 %, integral action absorbs it |
+| Encoder bias | 0.01, 0.03, 0.05 rad | 100 / 95 / 60 % |
+| Hand-eye calibration error | 5 to 30 mm | 100 % up to 15 mm, 55 % at 20 mm, 0 % at 30 mm |
+| Focal length error | +2, +5, +10 deg | 100 / 100 / 90 % |
+| Sensor noise, filter knows it | 2 to 32 * nominal | 100 % at every level, NEES 5.5 to 6.8 |
+| Sensor noise, filter assumes nominal | 8, 16, 32 * | 100 / 100 / 75 %, NEES up to about 6700 |
+
+Where it breaks and why:
+
+- **Hand-eye error at 20 mm**, exactly the capture radius (half the cube width). The error passes into the object estimate 1:1.
+- **Encoder bias at 0.05 rad.** The camera and tool share the biased joints so most of the error cancels, but the observer has no bias state.
+- **32 * noise the filter does not know about.** The overconfident observer passes noise into the torque (2.5 to 28.8 N m RMS) even though the cube estimate stays inside the capture radius.
+
+![disturbance sweep](docs/figures/sweep_disturbance.png)
+![calibration sweep](docs/figures/sweep_calibration_error.png)
+![noise sweep](docs/figures/sweep_noise_levels.png)
 
 ## 9. Failures found and how they were traced
 

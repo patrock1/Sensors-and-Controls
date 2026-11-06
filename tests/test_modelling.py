@@ -64,3 +64,18 @@ def test_separation_principle(cfg):
     assert np.all(np.linalg.eigvals(Ad - Bd @ Kr).__abs__() < 1)
     ratio = an.speed_ratio(Ad, Bd, Cd, Kr, Kf, dt)
     assert np.isfinite(ratio) and ratio > 0
+
+def test_full_inertia_matrix_reduces_to_diagonal_model(cfg):
+    """build_model accepts the full 6x6 M (coupled design, issue #4). A diagonal matrix must give
+    exactly the decoupled model, so the two options differ only by the off-diagonal coupling."""
+    d = np.array(cfg["modelling"]["joint_inertia"])
+    for a, b in zip(ss.build_model(d, 1.0), ss.build_model(np.diag(d), 1.0)):
+        assert np.allclose(a, b)
+
+
+def test_config_inertia_matrix_is_consistent(cfg):
+    """The full M in the config must be a valid inertia matrix whose diagonal is joint_inertia."""
+    M = np.array(cfg["modelling"]["inertia_matrix"])
+    assert M.shape == (6, 6) and np.allclose(M, M.T)
+    assert np.all(np.linalg.eigvalsh(M) > 0)
+    assert np.allclose(np.diag(M), cfg["modelling"]["joint_inertia"])

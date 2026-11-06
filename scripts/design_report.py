@@ -33,7 +33,13 @@ def main():
     sets = {"encoders (q)": C, "tachometers (qdot)": np.hstack([np.zeros((6, 6)), np.eye(6)])}
     print("  sensor sets:", {k: v["observable"] for k, v in an.sensor_set_report(A, sets).items()})
  
-    Ad, Bd, Cd, Dd = ss.discretise(A, B, C, D, dt)
+    # Parts C and D use the same model the pipeline runs (pipeline.build_stack): the full inertia
+    # matrix when modelling.coupled is true. Part A's per-joint rank tests above need the
+    # block-diagonal form, and coupling does not change rank (M is invertible either way).
+    coupled = cfg["modelling"].get("coupled", False)
+    M_design = np.array(cfg["modelling"]["inertia_matrix"]) if coupled else M
+    print(f"\nController/observer design model: {'coupled (full M at home)' if coupled else 'decoupled (diag M)'}")
+    Ad, Bd, Cd, Dd = ss.discretise(*ss.build_model(M_design, cfg["modelling"]["damping"]), dt)
     Qw = bryson(np.r_[cfg["lqr"]["q_err_max"], cfg["lqr"]["qd_max"]])
     Rw = bryson(P.TORQUE_LIMIT)
     Kr, _, Ec = design_dlqr(Ad, Bd, Qw, Rw)

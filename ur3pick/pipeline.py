@@ -55,8 +55,10 @@ def config_hash(cfg) -> str:
 
 def build_stack(cfg, q0):
     dt = cfg["sim"]["dt_ctrl"]
-    M = cfg["modelling"]["joint_inertia"]
-    Ad, Bd, Cd, _ = discretise(*build_model(M, cfg["modelling"]["damping"]), dt)
+    mod = cfg["modelling"]
+    M = mod["joint_inertia"]                                        # diagonal: used to scale torque noise
+    M_design = mod["inertia_matrix"] if mod.get("coupled", False) else M
+    Ad, Bd, Cd, _ = discretise(*build_model(M_design, mod["damping"]), dt)
 
     sigma_q = cfg["noise"]["sigma_q"]
     Qd = process_noise(dt, q_acc_from_torque_sigma(M, cfg["observer"]["sigma_tau"], dt))

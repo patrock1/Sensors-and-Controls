@@ -33,7 +33,7 @@ Notes to include:
 ```bash
 git clone https://github.com/patrock1/Sensors-and-Controls
 cd Sensors-and-Controls
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python -m scripts.build_ur3_model  # generates models/ur3/ur3.xml, needed before anything runs
@@ -64,10 +64,22 @@ Every 10 ms control tick:
 
 Ground truth is kept out structurally: `sim/sensors.py` is the only way into the pipeline, `evaluation/ground_truth.py` is the only thing that reads true state, and `tests/test_no_ground_truth.py` fails if any sensing/estimation/control module imports the simulator.
 
-TODO: frame diagram (`docs/figures/frames.png`) + table of frames B (base/world), T (tool), C (camera, OpenCV axes), O (cube)
+| Frame | Meaning |
+|---|---|
+| `B` | Robot base and world frame. Origin at the base on the table, z up, table top at z = 0 |
+| `T` | Tool frame (`tool0` site), z along the approach direction |
+| `C` | Camera frame, OpenCV convention (x right, y down, z forward) |
+| `O` | Object frame, origin at the cube centre |
 
-TODO: write out the chain from a pixel to the torque:
-pixel + depth → p_C → p_B = T_BT(q̂) · T_TC · p_C → minus half the cube height → object filter → PBVS target → LQR
+From a pixel to the torque:
+
+```
+pixel (u, v) + depth Z  ->  p_C = Z * inv(K) * [u, v, 1]
+p_C  ->  p_B = T_B_T(q_hat) * T_T_C * p_C  ->  minus half the cube height (top face to centre)
+p_B  ->  object filter  ->  PBVS target  ->  LQR torque
+```
+
+`q_hat` is the observer's estimate, never the true joint angles. Details and checks in `docs/part_b_sensing.md`.
 
 ## 4. Part A: Modelling
 
@@ -88,7 +100,7 @@ Full write-up: `docs/part_b_sensing.md`
 - Noise models: encoder noise, depth noise that grows with distance, dropped frames. The same values are used to build R, so R isn't hand-tuned
 - Camera intrinsics from the field of view, checked against a fit over 40 views
 - Depth sees the top face of the cube, not the centre, which gave a 20 mm bias. Fixed by shifting down half the cube size
-- TODO: add where the noise values come from (datasheet / Week 4 source)
+- Noise sources: `sigma_q` = 0.5 mrad assumes a 13-bit encoder (one count is 0.77 mrad), depth noise uses the Week 4 RGB-D model `sigma_d = a + b * Z^2`
 
 ## 6. Part C: Estimation
 

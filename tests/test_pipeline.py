@@ -5,7 +5,7 @@ import pytest
 from ur3pick.pipeline import load_cfg, run_trial
 from ur3pick.evaluation.metrics import trial_metrics
 
-REQUIRED = ["t", "q_meas", "x_hat", "P_x", "p_hat", "P_p", "p_meas", "meas_valid", "u", "phase","gt_q", "gt_qdot", "gt_p_obj", "gt_p_tool", "meta"]
+REQUIRED = ["t", "q_meas", "x_hat", "P_x", "p_hat", "P_p", "p_meas", "meas_valid", "u", "x_ref", "phase","gt_q", "gt_qdot", "gt_p_obj", "gt_p_tool", "meta"]
 
 @pytest.fixture(scope="module")
 def run():
@@ -22,7 +22,7 @@ def test_log_shapes(run):
     T = len(log["t"])
     assert T > 0 
     expect = {"q_meas": (T, 6), "x_hat": (T, 12), "P_x": (T, 12, 12), "p_hat": (T, 3), "P_p": (T, 3, 3),
-              "p_meas": (T, 3), "meas_valid": (T,), "u": (T, 6), "phase": (T,),
+              "p_meas": (T, 3), "meas_valid": (T,), "u": (T, 6), "x_ref": (T, 12), "phase": (T,),
               "gt_q": (T, 6), "gt_qdot": (T, 6), "gt_p_obj": (T, 3), "gt_p_tool": (T, 3)}
 
     for k, shape in expect.items():
@@ -34,6 +34,7 @@ def test_meta_and_metrics(run):
     assert meta["seed"] == 0 and "failure_cause" in meta
     m = trial_metrics(log, cfg)
     assert m["final_phase"] in ("done", "failed")
+    assert np.isfinite(m["track_rms"]) and m["track_rms"] < 0.05     # nominal run tracks within ~3 deg
 
 def test_phase_are_known(run):
     log, _ = run

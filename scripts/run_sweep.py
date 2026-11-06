@@ -3,6 +3,8 @@
     python scripts/run_sweep.py noise_levels
     python scripts/run_sweep.py calibration_error --n 5      # quick check
     python scripts/run_sweep.py disturbance
+    python scripts/run_sweep.py lqr_tuning                # Part D effort vs tracking trade-off
+    python scripts/run_sweep.py observer_tuning           # Part C consistency vs responsiveness
 Writes results/summary/sweep_<name>.json and a figure to docs/figures/.
 """
 import argparse
@@ -16,7 +18,7 @@ from ur3pick.evaluation import plots
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("name", choices=["noise_levels", "calibration_error", "disturbance"])
+    ap.add_argument("name", choices=sorted(p.stem for p in (c.ROOT / "configs" / "sweeps").glob("*.yaml")))
     ap.add_argument("--n", type=int, default=None, help="override the number of seeds per level")
     ap.add_argument("--seeds", default="eval", choices=["dev", "eval"])
     a = ap.parse_args()
@@ -31,13 +33,18 @@ def main():
         S = summarise(rows)
         results.append((level["name"], S))
         print(f"{level['name']:<26} success {S['success_rate']:.0%} "
-              f"[{S['ci_low']:.0%}, {S['ci_high']:.0%}]  obj_err median {S['obj_err_freeze_median']*1000:.1f} mm")
+              f"[{S['ci_low']:.0%}, {S['ci_high']:.0%}]  obj_err median {S['obj_err_freeze_median']*1000:.1f} mm  "
+              f"track rms {S['track_rms_median']*1000:.2f} mrad  u_rms {S['u_rms_median']:.1f} N m  "
+              f"NEES {S['nees_joint_median']:.1f}  qdot err {S['est_qd_rms_median']*1000:.1f} mrad/s")
     out = c.ROOT / "results" / "summary"; out.mkdir(parents=True, exist_ok=True)
     with open(out / f"sweep_{a.name}.json", "w") as f:
         json.dump([{"level": n_, **S} for n_, S in results], f, indent=2)
     figs = c.ROOT / "docs" / "figures"; figs.mkdir(parents=True, exist_ok=True)
     plots.plot_sweep(results, a.name.replace("_", " "), figs / f"sweep_{a.name}.png")
-
+    trade = sweep.get("tradeoff")
+    if trade:                                   # true = Part D defaults, or a dict of plot_tradeoff arguments
+        plots.plot_tradeoff(results, a.name.replace("_", " "), figs / f"tradeoff_{a.name}.png",
+                            **(trade if isinstance(trade, dict) else {}))
 
 if __name__ == "__main__":
     main()

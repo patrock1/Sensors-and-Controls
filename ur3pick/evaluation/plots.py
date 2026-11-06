@@ -17,7 +17,7 @@ def _shade_phases(ax, t, phase):
 def plot_trial(log, path):
     t = np.asarray(log["t"])
     phase = np.asarray(log["phase"]).astype(str)
-    fig, axs = plt.subplots(4, 1, figsize=(9, 11), sharex=True)
+    fig, axs = plt.subplots(5, 1, figsize=(9, 13.5), sharex=True)
 
     ax = axs[0]
     e = np.asarray(log["p_hat"]) - np.asarray(log["gt_p_obj"])
@@ -49,6 +49,16 @@ def plot_trial(log, path):
     ax.set_title("Commanded torques")
 
     ax = axs[3]
+    if "x_ref" in log:
+        et = np.asarray(log["x_ref"])[:, :6] - np.asarray(log["gt_q"])
+        for j in range(6):
+            ax.plot(t, 1000 * et[:, j], lw=0.8, label=f"q{j + 1}")
+        ax.legend(loc="upper right", fontsize=8, ncol=6)
+    ax.set_ylabel("tracking error (mrad)")
+    ax.set_title("Joint tracking error, q_ref - q_true")
+
+
+    ax = axs[4]
     _shade_phases(ax, t, phase)
     ax.plot(t, np.asarray(log["gt_p_obj"])[:, 2], "r", label="cube centre z")
     if "gt_p_tool" in log:
@@ -81,6 +91,38 @@ def plot_sweep(results, title, path):
     a2.bar(x, err, color="C1")
     a2.set_ylabel("median object error\nat freeze (mm)")
     a2.set_xticks(x); a2.set_xticklabels(names, rotation=30, ha="right")
+    fig.tight_layout()
+    fig.savefig(path, dpi=120)
+    plt.close(fig)
+
+def plot_tradeoff(results, title, path, x="u_rms_median", y="track_rms_median",
+                  xlabel="control effort, median u_rms (N m)", ylabel="tracking error, median RMS (mrad)",
+                  x_scale=1.0, y_scale=1000.0, x_ref=None, x_ref_label=None, x_log=False):
+    """One point per sweep level: summary key `x` against summary key `y`, labelled with the level
+    name and its success rate. Defaults draw Part D effort vs tracking; the sweep yaml can name other
+    keys (Part C: NEES vs estimate error). x_ref draws a vertical reference line, e.g. NEES = 12."""
+    names = [n for n, _ in results]
+    S = [s for _, s in results]
+    xs = x_scale * np.array([s[x] for s in S])
+    ys = y_scale * np.array([s[y] for s in S])
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.plot(xs, ys, "-o", color="C0")
+    for xv, yv, name, s in zip(xs, ys, names, S):
+        ax.annotate(f"{name}\n{s['success_rate']:.0%} success", (xv, yv), textcoords="offset points",
+                    xytext=(6, 6), fontsize=8)
+    if x_ref is not None:
+        ax.axvline(x_ref, color="k", ls="--", lw=1, label=x_ref_label)
+        if x_ref_label:
+            ax.legend(loc="best", fontsize=8)
+    if x_log:
+        ax.set_xscale("log")
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}" if str(v)[0] in "25" else ""))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(f"Trade-off: {title} (n = {S[0]['n']} per level)")
+    ax.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(path, dpi=120)
     plt.close(fig)

@@ -97,7 +97,7 @@ def run_trial(seed: int, cfg:dict, frame_cb=None) -> dict:
     obs, objf, lqr, grasp = build_stack(cfg, pkt.q_meas)
 
     u = np.zeros(6)
-    log = {k: [] for k in ["t", "q_meas", "x_hat", "P_x", "p_hat", "P_p", "p_meas", "meas_valid", "u", "phase", "gripper", "gt_q", "gt_qdot", "gt_p_obj", "gt_p_tool"]}
+    log = {k: [] for k in ["t", "q_meas", "x_hat", "P_x", "p_hat", "P_p", "p_meas", "meas_valid", "u", "x_ref", "phase", "gripper", "gt_q", "gt_qdot", "gt_p_obj", "gt_p_tool"]}
     t_done = None
 
     try:
@@ -120,7 +120,7 @@ def run_trial(seed: int, cfg:dict, frame_cb=None) -> dict:
             u = lqr.command(est.x_hat, x_ref)
 
             truth = read_truth(scene)
-            for k, v in [("t", pkt.t), ("q_meas", pkt.q_meas), ("x_hat", est.x_hat), ("P_x", est.P_x), ("p_hat", est.p_hat), ("P_p", est.P_p), ("p_meas", p_meas), ("meas_valid", valid), ("u", u), ("phase", phase), ("gripper", grip), ("gt_q", truth ["q"]), ("gt_qdot", truth["qdot"]), ("gt_p_obj", truth["p_B_O"]), ("gt_p_tool", truth["p_B_T"])]:
+            for k, v in [("t", pkt.t), ("q_meas", pkt.q_meas), ("x_hat", est.x_hat), ("P_x", est.P_x), ("p_hat", est.p_hat), ("P_p", est.P_p), ("p_meas", p_meas), ("meas_valid", valid), ("u", u), ("x_ref", x_ref), ("phase", phase), ("gripper", grip), ("gt_q", truth ["q"]), ("gt_qdot", truth["qdot"]), ("gt_p_obj", truth["p_B_O"]), ("gt_p_tool", truth["p_B_T"])]:
                 log[k].append(v)
 
             # stop: hold_time after done/failed, or the third hard stop

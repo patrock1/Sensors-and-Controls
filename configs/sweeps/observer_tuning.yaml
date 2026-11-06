@@ -1,0 +1,23 @@
+# Part C trade-off: estimator consistency against responsiveness.
+# observer.sigma_tau is the unmodelled-torque standard deviation that sets the joint KF process
+# noise Qd. Each level scales the nominal vector [6, 6, 3, 0.9, 0.9, 0.9] N m by one factor.
+#   small sigma_tau: filter trusts the decoupled model, lags in motion, P too small -> NEES >> 12
+#   large sigma_tau: filter trusts the encoders, passes their noise into qdot, P too big -> NEES << 12
+# A consistent filter has mean NEES ~ 12 (12 states). Only sigma_tau changes.
+name: observer_tuning
+n_seeds: 20
+tradeoff:                 # run_sweep.py draws NEES (x) against joint-rate estimate error (y)
+  x: nees_joint_median
+  y: est_qd_rms_median
+  xlabel: "consistency, median joint NEES (12 = consistent)"
+  ylabel: "responsiveness, median joint-rate estimate error RMS (mrad/s)"
+  x_ref: 12
+  x_ref_label: "NEES = 12 (consistent)"
+  x_log: true
+levels:
+  - {name: "sigma_tau x0.03", overrides: {observer.sigma_tau: [0.18, 0.18, 0.09, 0.027, 0.027, 0.027]}}
+  - {name: "sigma_tau x0.1", overrides: {observer.sigma_tau: [0.6, 0.6, 0.3, 0.09, 0.09, 0.09]}}
+  - {name: "sigma_tau x0.33", overrides: {observer.sigma_tau: [2.0, 2.0, 1.0, 0.3, 0.3, 0.3]}}
+  - {name: "sigma_tau x1 (nominal)", overrides: {}}
+  - {name: "sigma_tau x3", overrides: {observer.sigma_tau: [18.0, 18.0, 9.0, 2.7, 2.7, 2.7]}}
+  - {name: "sigma_tau x10", overrides: {observer.sigma_tau: [60.0, 60.0, 30.0, 9.0, 9.0, 9.0]}}

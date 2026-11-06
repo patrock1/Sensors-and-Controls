@@ -5,7 +5,7 @@
 - Group: 2
 - Team: Patrick Blampied, Isaac Silva, Rayann Doha, Nathan Whibley
 - Repository: https://github.com/patrock1/Sensors-and-Controls
-- Demo video (5 min): TODO link
+- Demo video (5 min): https://youtu.be/XpAsFv4Lrr8
 
 ## Overview
 

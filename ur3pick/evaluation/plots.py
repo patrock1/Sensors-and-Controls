@@ -95,22 +95,32 @@ def plot_sweep(results, title, path):
     fig.savefig(path, dpi=120)
     plt.close(fig)
 
-def plot_tradeoff(results, title, path):
-    """Effort against tracking: one point per sweep level, median u_rms (x) against median
-    tracking RMS (y), labelled with the level name and its success rate. A point that is worse on
-    both axes than another is dominated, the curve through the rest is the trade-off."""
+def plot_tradeoff(results, title, path, x="u_rms_median", y="track_rms_median",
+                  xlabel="control effort, median u_rms (N m)", ylabel="tracking error, median RMS (mrad)",
+                  x_scale=1.0, y_scale=1000.0, x_ref=None, x_ref_label=None, x_log=False):
+    """One point per sweep level: summary key `x` against summary key `y`, labelled with the level
+    name and its success rate. Defaults draw Part D effort vs tracking; the sweep yaml can name other
+    keys (Part C: NEES vs estimate error). x_ref draws a vertical reference line, e.g. NEES = 12."""
     names = [n for n, _ in results]
     S = [s for _, s in results]
-    u = np.array([s["u_rms_median"] for s in S])
-    tr = 1000 * np.array([s["track_rms_median"] for s in S])
+    xs = x_scale * np.array([s[x] for s in S])
+    ys = y_scale * np.array([s[y] for s in S])
 
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.plot(u, tr, "-o", color="C0")
-    for x, y, name, s in zip(u, tr, names, S):
-        ax.annotate(f"{name}\n{s['success_rate']:.0%} success", (x, y), textcoords="offset points",
+    ax.plot(xs, ys, "-o", color="C0")
+    for xv, yv, name, s in zip(xs, ys, names, S):
+        ax.annotate(f"{name}\n{s['success_rate']:.0%} success", (xv, yv), textcoords="offset points",
                     xytext=(6, 6), fontsize=8)
-    ax.set_xlabel("control effort, median u_rms (N m)")
-    ax.set_ylabel("tracking error, median RMS (mrad)")
+    if x_ref is not None:
+        ax.axvline(x_ref, color="k", ls="--", lw=1, label=x_ref_label)
+        if x_ref_label:
+            ax.legend(loc="best", fontsize=8)
+    if x_log:
+        ax.set_xscale("log")
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}" if str(v)[0] in "25" else ""))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     ax.set_title(f"Trade-off: {title} (n = {S[0]['n']} per level)")
     ax.grid(alpha=0.3)
     fig.tight_layout()

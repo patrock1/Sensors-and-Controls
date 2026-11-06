@@ -88,6 +88,15 @@ def tracking_error(log, skip_s=TRACK_SKIP_S):
     per_joint = np.sqrt(np.mean(e ** 2, axis=0))
     return float(np.sqrt(np.mean(e ** 2))), float(np.max(np.abs(e))), per_joint
 
+def joint_estimate_error(log, skip_s=NEES_SKIP_S):
+    t = np.asarray(log["t"])
+    k = t >= t[0] + skip_s
+    x_hat = np.asarray(log["x_hat"])[k]
+    if x_hat.size == 0:
+        return float("nan"), float("nan")
+    eq = x_hat[:, :6] - np.asarray(log["gt_q"])[k]
+    ed = x_hat[:, 6:] - np.asarray(log["gt_qdot"])[k]
+    return float(np.sqrt(np.mean(eq ** 2))), float(np.sqrt(np.mean(ed ** 2))) 
 
 def capture_radius(cfg):
     """Largest lateral (xy) estimate error the grasp can absorb: half the cube edge. Beyond it the
@@ -157,6 +166,7 @@ def trial_metrics(log, cfg) -> dict:
     success = truth_success(log, cfg)
     claimed = bool(ph[-1] == "done")
     track_rms, track_max, track_joint = tracking_error(log)
+    est_q_rms, est_qd_rms = joint_estimate_error(log)
     meas_xy = raw_meas_err_xy(log, k)
     return dict(
         seed=meta.get("seed", -1),
@@ -172,6 +182,8 @@ def trial_metrics(log, cfg) -> dict:
         t_grasp=float(t[kg]) if kg is not None else float("nan"),
         t_end=float(t[-1]),
         nees_joint=joint_nees(log),
+        est_q_rms=est_q_rms,
+        est_qd_rms=est_qd_rms,
         u_rms=float(np.sqrt(np.mean(np.asarray(log["u"]) ** 2))) if "u" in log else float("nan"),
         track_rms=track_rms,
         track_max=track_max,
@@ -222,6 +234,8 @@ def summarise(rows) -> dict:
         obj_err_z_median=med("obj_err_freeze_z"),
         t_grasp_median=med("t_grasp", only_success=True),
         nees_joint_median=med("nees_joint"),
+        est_q_rms_median=med("est_q_rms"),
+        est_qd_rms_median=med("est_qd_rms"),
         u_rms_median=med("u_rms"),
         track_rms_median=med("track_rms"),
         track_max_p90=p90("track_max"),

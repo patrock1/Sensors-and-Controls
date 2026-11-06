@@ -3,7 +3,7 @@
 **41014 Sensors and Control, Integrated Project, Track B (manipulator: vision-guided pick)**
 
 - Group: 2
-- Team: Patrick Blampied, Isaac Silva(25286838), Rayann Doha(24964052), Nathan Whibley
+- Team: Patrick Blampied (24481210), Isaac Silva(25286838), Rayann Doha(24964052), Nathan Whibley
 - Repository: https://github.com/patrock1/Sensors-and-Controls
 - Demo video (5 min): https://youtu.be/XpAsFv4Lrr8
 

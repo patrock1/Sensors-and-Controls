@@ -47,8 +47,6 @@ Too small (x0.03-x0.1). In a nominal trial the filter looks excellent: it trusts
 Too large (x3-x10). The filter trusts the encoders, so their noise passes straight into the velocity estimate (115-126 mrad/s). The LQR turns that noise into torque (3.9-4.6 N m). NEES falls further below 12 (conservative).
 x0.33 is the only level that is close to consistent under the push (NEES 11.0, ideal 12) while also giving the smallest velocity error with the push. In nominal trials it halves the velocity error and the torque compared with x1. 
 
-[TEAM: keep ONE of these two sentences, depending on what is in configs/default.yaml for the final runs]
-*The final configuration uses x0.33 (`sigma_tau` = [2, 2, 1, 0.3, 0.3, 0.3] N m) because it is the most consistent setting under disturbance and the least noisy in nominal trials.*
 *The final configuration keeps x1 as a margin for disturbances larger than the 40 N push tested. x0.33 is the better-tuned choice for the conditions we tested and is reported here as the recommended setting.*
 
 Estimator speed

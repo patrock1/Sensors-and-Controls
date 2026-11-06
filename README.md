@@ -249,13 +249,14 @@ results/summary/      committed results (JSON) behind every number in this READM
 ## 12. Individual contributions
 
 - Patrick Blampied: see `docs/contributions/patrick.md`
-- Isaac Silva: TODO
+- Isaac Silva: `docs/contributions/isaac.md`
 - Rayann Doha: see `docs/contributions/rayann.md`
 - Nathan Whibley: see `docs/contributions/nathan.md`
 
 ## 13. Generative AI declaration
 
-TODO: each member lists the tools they used and what for (required by the marking guide)
+Ai Usage Includes:
+- Claude by anthropic, used by all members to refine the functions and code blocks and double check system changes before commiting.
 
 ## 14. Acknowledgements
 

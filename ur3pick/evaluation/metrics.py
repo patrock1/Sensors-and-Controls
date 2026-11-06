@@ -29,6 +29,7 @@ GRASP_PHASE = "grasp"
 NEES_SKIP_S = 0.5        # s: ignore the start, while P is still shrinking from its initial value
 SENSING_SHARE = 0.5      # raw error >= half the estimate's error -> the camera chain explains the miss
 MEAS_WINDOW = 5         # first valid raw localisations used (median): one noisy frame should not decide the cause
+TRACK_SKIP_S = 0.5
 
 
 def _phases(log):
@@ -75,6 +76,17 @@ def joint_nees(log, skip_s=NEES_SKIP_S):
         except np.linalg.LinAlgError:
             continue
     return float(np.mean(vals)) if vals else float("nan")
+
+def tracking_error(log, skip_s=TRACK_SKIP_S):
+    if "x_ref" not in log:
+        return float("nan"), float("nan"), np.full(6, np.nan)
+    t = np.asarray(log["t"])
+    k = t>= t[0] + skip_s
+    e = np.asarray(log["x_ref"])[k, :6] - np.asarray(log["gt_q"])[k]
+    if e.size == 0:
+        return float("nan"), float("nan"), np.full(6, np.nan)
+    per_joint = np.sqrt(np.mean(e ** 2, axis=0))
+    return float(np.sqrt(np.mean(e ** 2))), float(np.max(np.abs(e))), per_joint
 
 
 def capture_radius(cfg):
@@ -144,6 +156,7 @@ def trial_metrics(log, cfg) -> dict:
     kg = _first(ph == GRASP_PHASE)
     success = truth_success(log, cfg)
     claimed = bool(ph[-1] == "done")
+    track_rms, track_max, track_joint = tracking_error(log)
     meas_xy = raw_meas_err_xy(log, k)
     return dict(
         seed=meta.get("seed", -1),
@@ -160,6 +173,9 @@ def trial_metrics(log, cfg) -> dict:
         t_end=float(t[-1]),
         nees_joint=joint_nees(log),
         u_rms=float(np.sqrt(np.mean(np.asarray(log["u"]) ** 2))) if "u" in log else float("nan"),
+        track_rms=track_rms,
+        track_max=track_max,
+        **{f"track_rms_q{j + 1}": float(v) for j, v in enumerate(track_joint)},
     )
 
 
@@ -206,6 +222,9 @@ def summarise(rows) -> dict:
         obj_err_z_median=med("obj_err_freeze_z"),
         t_grasp_median=med("t_grasp", only_success=True),
         nees_joint_median=med("nees_joint"),
+        u_rms_median=med("u_rms"),
+        track_rms_median=med("track_rms"),
+        track_max_p90=p90("track_max"),
         disagreements=int(sum(r["disagree"] for r in rows)),
         failure_causes=causes,
     )

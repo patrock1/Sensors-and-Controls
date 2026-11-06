@@ -17,7 +17,7 @@ def _shade_phases(ax, t, phase):
 def plot_trial(log, path):
     t = np.asarray(log["t"])
     phase = np.asarray(log["phase"]).astype(str)
-    fig, axs = plt.subplots(4, 1, figsize=(9, 11), sharex=True)
+    fig, axs = plt.subplots(5, 1, figsize=(9, 13.5), sharex=True)
 
     ax = axs[0]
     e = np.asarray(log["p_hat"]) - np.asarray(log["gt_p_obj"])
@@ -49,6 +49,16 @@ def plot_trial(log, path):
     ax.set_title("Commanded torques")
 
     ax = axs[3]
+    if "x_ref" in log:
+        et = np.asarray(log["x_ref"])[:, :6] - np.asarray(log["gt_q"])
+        for j in range(6):
+            ax.plot(t, 1000 * et[:, j], lw=0.8, label=f"q{j + 1}")
+        ax.legend(loc="upper right", fontsize=8, ncol=6)
+    ax.set_ylabel("tracking error (mrad)")
+    ax.set_title("Joint tracking error, q_ref - q_true")
+
+
+    ax = axs[4]
     _shade_phases(ax, t, phase)
     ax.plot(t, np.asarray(log["gt_p_obj"])[:, 2], "r", label="cube centre z")
     if "gt_p_tool" in log:

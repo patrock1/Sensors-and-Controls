@@ -86,6 +86,10 @@ Every 10 ms control tick:
 
 Ground truth is kept out structurally: `sim/sensors.py` is the only way into the pipeline, `evaluation/ground_truth.py` is the only thing that reads true state, and `tests/test_no_ground_truth.py` fails if any sensing/estimation/control module imports the simulator.
 
+![Frames](docs/figures/frames.png)
+
+*Frames drawn on the rendered scene from the pipeline's own transforms (`sensing/frames.py`). Right: the wrist camera view; the detected centroid lands on the top face, not the cube centre, which is why localisation shifts the point down by half the cube.*
+
 | Frame | Meaning |
 |---|---|
 | `B` | Robot base and world frame. Origin at the base on the table, z up, table top at z = 0 |
@@ -126,7 +130,7 @@ Full write-up: `docs/part_b_sensing.md`
 
 ## 6. Part C: Estimation
 
-TODO: link Part C write-up once it exists
+Full write-up: `docs/part_c_estimation.md`
 
 - Joint observer: linear KF on [q, q̇], only q measured. R from encoder noise, Q from an unmodelled torque sigma_tau
 - Object filter: cube treated as static (small random walk), 99 % chi-square gate, estimate frozen once the arm starts to descend
@@ -151,7 +155,7 @@ TODO: link Part C write-up once it exists
 
 ## 7. Part D: Control
 
-TODO: link Part D write-up once it exists
+Full write-up: `docs/part_d_control.md`
 
 - Cascade: PBVS outer loop makes a joint reference, LQR inner loop tracks it
 - Grasp state machine: search → approach → descend → grasp → lift → done, with timeouts
@@ -230,7 +234,7 @@ results/summary/      committed results (JSON) behind every number in this READM
 - Patrick Blampied: see `docs/contributions/patrick.md`
 - Isaac Silva: TODO
 - Rayann Doha: see `docs/contributions/rayann.md`
-- Nathan Whibley: TODO (documentation)
+- Nathan Whibley: see `docs/contributions/nathan.md`
 
 ## 13. Generative AI declaration
 

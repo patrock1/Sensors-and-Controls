@@ -94,3 +94,25 @@ def plot_sweep(results, title, path):
     fig.tight_layout()
     fig.savefig(path, dpi=120)
     plt.close(fig)
+
+def plot_tradeoff(results, title, path):
+    """Effort against tracking: one point per sweep level, median u_rms (x) against median
+    tracking RMS (y), labelled with the level name and its success rate. A point that is worse on
+    both axes than another is dominated, the curve through the rest is the trade-off."""
+    names = [n for n, _ in results]
+    S = [s for _, s in results]
+    u = np.array([s["u_rms_median"] for s in S])
+    tr = 1000 * np.array([s["track_rms_median"] for s in S])
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.plot(u, tr, "-o", color="C0")
+    for x, y, name, s in zip(u, tr, names, S):
+        ax.annotate(f"{name}\n{s['success_rate']:.0%} success", (x, y), textcoords="offset points",
+                    xytext=(6, 6), fontsize=8)
+    ax.set_xlabel("control effort, median u_rms (N m)")
+    ax.set_ylabel("tracking error, median RMS (mrad)")
+    ax.set_title(f"Trade-off: {title} (n = {S[0]['n']} per level)")
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(path, dpi=120)
+    plt.close(fig)

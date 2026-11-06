@@ -1,0 +1,14 @@
+# Part D trade-off: control effort against tracking error.
+# Bryson's rule: Q = 1/q_err_max^2, so a smaller q_err_max weights tracking error more heavily
+# against torque (R = 1/TORQUE_LIMIT^2 is unchanged). Expect lower tracking error and higher u_rms
+# as q_err_max shrinks, until the loop gets aggressive enough to amplify sensor noise.
+# Only q_err_max changes: qd_max and qi_max stay at their defaults, so each point differs in one knob.
+name: lqr_tuning
+n_seeds: 20
+tradeoff: true            # run_sweep.py also draws effort vs tracking (plots.plot_tradeoff)
+levels:
+  - {name: "q_err_max 0.20 rad", overrides: {lqr.q_err_max: [0.20, 0.20, 0.20, 0.20, 0.20, 0.20]}}
+  - {name: "q_err_max 0.10 rad", overrides: {lqr.q_err_max: [0.10, 0.10, 0.10, 0.10, 0.10, 0.10]}}
+  - {name: "q_err_max 0.05 rad (nominal)", overrides: {}}
+  - {name: "q_err_max 0.025 rad", overrides: {lqr.q_err_max: [0.025, 0.025, 0.025, 0.025, 0.025, 0.025]}}
+  - {name: "q_err_max 0.0125 rad", overrides: {lqr.q_err_max: [0.0125, 0.0125, 0.0125, 0.0125, 0.0125, 0.0125]}}

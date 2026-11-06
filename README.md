@@ -168,6 +168,7 @@ TODO: link Part D write-up once it exists
 
   ![LQR trade-off](docs/figures/tradeoff_lqr_tuning.png)
 - Estimator vs controller speed. TODO: explain the ratio
+- Update - decoupled design goes unstable with updated speed ratio
 
 ## 8. Part E: Integration and robustness
 

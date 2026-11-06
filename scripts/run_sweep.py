@@ -34,7 +34,7 @@ def main():
         results.append((level["name"], S))
         print(f"{level['name']:<26} success {S['success_rate']:.0%} "
               f"[{S['ci_low']:.0%}, {S['ci_high']:.0%}]  obj_err median {S['obj_err_freeze_median']*1000:.1f} mm  "
-              f"track rms {S['track_rms_median']*1000:.2f} mrad  u_rms {S['u_rms_median']:.1f} N m"
+              f"track rms {S['track_rms_median']*1000:.2f} mrad  u_rms {S['u_rms_median']:.1f} N m  "
               f"NEES {S['nees_joint_median']:.1f}  qdot err {S['est_qd_rms_median']*1000:.1f} mrad/s")
     out = c.ROOT / "results" / "summary"; out.mkdir(parents=True, exist_ok=True)
     with open(out / f"sweep_{a.name}.json", "w") as f:
